@@ -14,7 +14,8 @@ export const CLT = () => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    learning: '',
+    platform: '',
+    completionDate: '',
     files: [],
   });
   const [isDragging, setIsDragging] = useState(false);
@@ -22,7 +23,7 @@ export const CLT = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const steps = [
-    { id: 1, label: 'Project Details', icon: FileText },
+    { id: 1, label: 'Course Details', icon: FileText },
     { id: 2, label: 'Learning Evidence', icon: ImageIcon },
     { id: 3, label: 'Review & Submit', icon: CheckCircle },
   ];
@@ -61,7 +62,7 @@ export const CLT = () => {
           setIsSubmitting(false);
           alert('Submission successful!');
           // Reset form
-          setFormData({ title: '', description: '', learning: '', files: [] });
+          setFormData({ title: '', description: '', platform: '', completionDate: '', files: [] });
           setCurrentStep(1);
           setUploadProgress(0);
         }, 500);
@@ -143,37 +144,42 @@ export const CLT = () => {
               transition={{ duration: 0.3 }}
               className="clt-step-content"
             >
-              <h2 className="clt-form-title">Project Details</h2>
+              <h2 className="clt-form-title">Course Details</h2>
 
               <Input
-                label="Project Title"
-                placeholder="Enter project title"
+                label="Course Title"
+                placeholder="Enter course title"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 floatingLabel
               />
 
               <div className="clt-textarea-wrapper">
-                <label className="clt-textarea-label">Project Description</label>
+                <label className="clt-textarea-label">Course Description</label>
                 <textarea
                   className="clt-textarea"
                   rows="5"
-                  placeholder="Describe your creative project..."
+                  placeholder="Describe the course you had completed..."
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 />
               </div>
 
-              <div className="clt-textarea-wrapper">
-                <label className="clt-textarea-label">Key Learnings</label>
-                <textarea
-                  className="clt-textarea"
-                  rows="4"
-                  placeholder="What did you learn from this project?"
-                  value={formData.learning}
-                  onChange={(e) => setFormData({ ...formData, learning: e.target.value })}
-                />
-              </div>
+              <Input
+                label="Platform"
+                placeholder="e.g., Coursera, Udemy, edX"
+                value={formData.platform}
+                onChange={(e) => setFormData({ ...formData, platform: e.target.value })}
+                floatingLabel
+              />
+
+              <Input
+                label="Completion Date"
+                type="date"
+                value={formData.completionDate}
+                onChange={(e) => setFormData({ ...formData, completionDate: e.target.value })}
+                floatingLabel
+              />
 
               <div className="clt-form-actions">
                 <Button
@@ -298,7 +304,7 @@ export const CLT = () => {
               <h2 className="clt-form-title">Review & Submit</h2>
 
               <div className="clt-review-section">
-                <h3 className="clt-review-label">Project Title</h3>
+                <h3 className="clt-review-label">Course Title</h3>
                 <p className="clt-review-value">{formData.title}</p>
               </div>
 
@@ -308,8 +314,13 @@ export const CLT = () => {
               </div>
 
               <div className="clt-review-section">
-                <h3 className="clt-review-label">Key Learnings</h3>
-                <p className="clt-review-value">{formData.learning}</p>
+                <h3 className="clt-review-label">Platform</h3>
+                <p className="clt-review-value">{formData.platform}</p>
+              </div>
+
+              <div className="clt-review-section">
+                <h3 className="clt-review-label">Completion Date</h3>
+                <p className="clt-review-value">{formData.completionDate}</p>
               </div>
 
               <div className="clt-review-section">
@@ -342,7 +353,7 @@ export const CLT = () => {
                   onClick={handleSubmit}
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? 'Submitting...' : 'Submit Project'}
+                  {isSubmitting ? 'Submitting...' : 'Finalize Submission'}
                 </Button>
               </div>
             </motion.div>

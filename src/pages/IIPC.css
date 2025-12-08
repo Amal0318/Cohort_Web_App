@@ -10,18 +10,8 @@
 .iipc-header {
   position: relative;
   z-index: 1;
+  text-align: center;
   margin-bottom: 3rem;
-}
-
-.iipc-header-content {
-  display: flex;
-  align-items: center;
-  gap: 2rem;
-}
-
-.iipc-linkedin-icon {
-  flex-shrink: 0;
-  color: #0A66C2;
 }
 
 .iipc-title {
@@ -29,7 +19,7 @@
   font-size: 3rem;
   font-weight: 800;
   margin: 0 0 1rem 0;
-  background: linear-gradient(135deg, #0A66C2 0%, #42A5F5 100%);
+  background: linear-gradient(135deg, #F7C948 0%, #E53935 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -328,6 +318,8 @@
   cursor: pointer;
   margin-bottom: 2rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  z-index: 1;
 }
 
 [data-theme='light'] .iipc-upload-area {

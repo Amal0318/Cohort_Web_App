@@ -49,27 +49,10 @@ export const SCD = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        <div className="scd-header-content">
-          <motion.div
-            className="scd-header-icon"
-            animate={{
-              rotate: [0, 5, -5, 0],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: 'easeInOut',
-            }}
-          >
-            <Code size={64} />
-          </motion.div>
-          <div>
-            <h1 className="scd-title">Skill & Career Development</h1>
-            <p className="scd-subtitle">
-              Track your coding skills and competitive programming journey
-            </p>
-          </div>
-        </div>
+        <h1 className="scd-title">Skill & Career Development</h1>
+        <p className="scd-subtitle">
+          Track your coding skills and competitive programming journey
+        </p>
       </motion.div>
 
       <div className="scd-layout">

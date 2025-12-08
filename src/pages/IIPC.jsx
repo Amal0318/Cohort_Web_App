@@ -10,7 +10,7 @@ import './IIPC.css';
 export const IIPC = () => {
   const { theme } = useTheme();
   const [activeSection, setActiveSection] = useState('post');
-  
+
   // Post Verification State
   const [postUrl, setPostUrl] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
@@ -24,7 +24,7 @@ export const IIPC = () => {
 
   const handleVerifyPost = () => {
     setIsVerifying(true);
-    
+
     // Simulate API call
     setTimeout(() => {
       setPostData({
@@ -71,15 +71,10 @@ export const IIPC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        <div className="iipc-header-content">
-          <Linkedin size={64} className="iipc-linkedin-icon" />
-          <div>
-            <h1 className="iipc-title">Industry Interaction & Professional Competency</h1>
-            <p className="iipc-subtitle">
-              Verify your LinkedIn activity and professional network
-            </p>
-          </div>
-        </div>
+        <h1 className="iipc-title">Industry Interaction & Professional Competency</h1>
+        <p className="iipc-subtitle">
+          Verify your LinkedIn activity and professional network
+        </p>
       </motion.div>
 
       {/* Section Selector */}
@@ -385,14 +380,16 @@ export const IIPC = () => {
                     exit={{ opacity: 0, x: -20 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <Input
-                      label="LinkedIn Profile URL"
-                      placeholder="https://www.linkedin.com/in/..."
-                      value={profileUrl}
-                      onChange={(e) => setProfileUrl(e.target.value)}
-                      icon={<Linkedin size={20} />}
-                      floatingLabel
-                    />
+                    <div className="iipc-profile-section">
+                      <Input
+                        label="LinkedIn Profile URL"
+                        placeholder="https://www.linkedin.com/in/your-profile"
+                        value={profileUrl}
+                        onChange={(e) => setProfileUrl(e.target.value)}
+                        icon={<Linkedin size={20} />}
+                        floatingLabel
+                      />
+                    </div>
 
                     <Button
                       variant="primary"

@@ -179,6 +179,81 @@
   color: #FFFFFF;
 }
 
+/* Input Group */
+.cfc-input-group {
+  margin-bottom: 1.5rem;
+}
+
+/* Radio Group */
+.cfc-radio-group {
+  display: flex;
+  gap: 2rem;
+  margin-top: 0.75rem;
+}
+
+.cfc-radio-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  position: relative;
+}
+
+.cfc-radio-input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.cfc-radio-custom {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme='light'] .cfc-radio-custom {
+  border-color: #E0E0E0;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme='dark'] .cfc-radio-custom {
+  border-color: #424242;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.cfc-radio-input:checked+.cfc-radio-custom {
+  border-color: #F7C948;
+}
+
+.cfc-radio-input:checked+.cfc-radio-custom::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #F7C948 0%, #E53935 100%);
+}
+
+.cfc-radio-text {
+  font-weight: 500;
+}
+
+[data-theme='light'] .cfc-radio-text {
+  color: #000000;
+}
+
+[data-theme='dark'] .cfc-radio-text {
+  color: #FFFFFF;
+}
+
 .cfc-file-input {
   display: none;
 }
@@ -190,6 +265,8 @@
   text-align: center;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  z-index: 1;
 }
 
 [data-theme='light'] .cfc-upload-card {
@@ -467,6 +544,8 @@
   font-size: 1rem;
   resize: vertical;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  z-index: 1;
 }
 
 [data-theme='light'] .cfc-textarea {

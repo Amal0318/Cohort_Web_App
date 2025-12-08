@@ -10,18 +10,8 @@
 .sri-header {
   position: relative;
   z-index: 1;
+  text-align: center;
   margin-bottom: 3rem;
-}
-
-.sri-header-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 2rem;
-}
-
-.sri-header-text {
-  flex: 1;
 }
 
 .sri-title {
@@ -47,11 +37,6 @@
 
 [data-theme='dark'] .sri-subtitle {
   color: #BDBDBD;
-}
-
-.sri-header-icon {
-  flex-shrink: 0;
-  color: #E53935;
 }
 
 /* Layout */
@@ -117,6 +102,8 @@
   font-family: 'Inter', sans-serif;
   font-size: 1rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  z-index: 1;
 }
 
 [data-theme='light'] .sri-input {
@@ -274,6 +261,8 @@
   font-size: 1rem;
   resize: vertical;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  z-index: 1;
 }
 
 [data-theme='light'] .sri-textarea {

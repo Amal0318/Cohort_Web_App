@@ -10,18 +10,8 @@
 .scd-header {
   position: relative;
   z-index: 1;
+  text-align: center;
   margin-bottom: 3rem;
-}
-
-.scd-header-content {
-  display: flex;
-  align-items: center;
-  gap: 2rem;
-}
-
-.scd-header-icon {
-  flex-shrink: 0;
-  color: #FF5722;
 }
 
 .scd-title {
@@ -29,7 +19,7 @@
   font-size: 3rem;
   font-weight: 800;
   margin: 0 0 1rem 0;
-  background: linear-gradient(135deg, #FF5722 0%, #FFC107 100%);
+  background: linear-gradient(135deg, #F7C948 0%, #E53935 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -262,6 +252,8 @@
   border-radius: 1.5rem;
   cursor: pointer;
   transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
 }
 
 [data-theme='light'] .scd-upload-area {

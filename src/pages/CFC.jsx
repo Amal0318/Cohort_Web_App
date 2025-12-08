@@ -22,6 +22,9 @@ export const CFC = () => {
   const [certificate, setCertificate] = useState(null);
   const [certificatePreview, setCertificatePreview] = useState(null);
   const [hackathonName, setHackathonName] = useState('');
+  const [hackathonMode, setHackathonMode] = useState('');
+  const [registrationDate, setRegistrationDate] = useState('');
+  const [participationDate, setParticipationDate] = useState('');
 
   // BMC Video state
   const [videoUrl, setVideoUrl] = useState('');
@@ -30,18 +33,23 @@ export const CFC = () => {
   // Internship state
   const [internshipData, setInternshipData] = useState({
     company: '',
+    mode: '',
     role: '',
     duration: '',
-    description: '',
+    completionCertificate: null,
+    letterOfRecommendation: null,
   });
+  const [completionCertPreview, setCompletionCertPreview] = useState(null);
+  const [lorPreview, setLorPreview] = useState(null);
   const [internshipStatus, setInternshipStatus] = useState(1); // 1-4 steps
 
   // GenAI state
   const [genAIData, setGenAIData] = useState({
-    courseName: '',
-    platform: '',
-    completionDate: '',
-    certificate: null,
+    problemStatement: '',
+    solutionType: '',
+    innovationTechnology: '',
+    innovationIndustry: '',
+    githubRepo: '',
   });
   const [genAIStatus, setGenAIStatus] = useState(1);
 
@@ -50,6 +58,22 @@ export const CFC = () => {
     if (file) {
       setCertificate(file);
       setCertificatePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleCompletionCertUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setInternshipData({ ...internshipData, completionCertificate: file });
+      setCompletionCertPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleLorUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setInternshipData({ ...internshipData, letterOfRecommendation: file });
+      setLorPreview(URL.createObjectURL(file));
     }
   };
 
@@ -142,6 +166,52 @@ export const CFC = () => {
                 floatingLabel
               />
 
+              <div className="cfc-input-group">
+                <label className="cfc-label">Mode of Participation</label>
+                <div className="cfc-radio-group">
+                  <label className="cfc-radio-label">
+                    <input
+                      type="radio"
+                      name="hackathonMode"
+                      value="online"
+                      checked={hackathonMode === 'online'}
+                      onChange={(e) => setHackathonMode(e.target.value)}
+                      className="cfc-radio-input"
+                    />
+                    <span className="cfc-radio-custom"></span>
+                    <span className="cfc-radio-text">Online</span>
+                  </label>
+                  <label className="cfc-radio-label">
+                    <input
+                      type="radio"
+                      name="hackathonMode"
+                      value="offline"
+                      checked={hackathonMode === 'offline'}
+                      onChange={(e) => setHackathonMode(e.target.value)}
+                      className="cfc-radio-input"
+                    />
+                    <span className="cfc-radio-custom"></span>
+                    <span className="cfc-radio-text">Offline</span>
+                  </label>
+                </div>
+              </div>
+
+              <Input
+                label="Date of Registration"
+                type="date"
+                value={registrationDate}
+                onChange={(e) => setRegistrationDate(e.target.value)}
+                floatingLabel
+              />
+
+              <Input
+                label="Date of Participation"
+                type="date"
+                value={participationDate}
+                onChange={(e) => setParticipationDate(e.target.value)}
+                floatingLabel
+              />
+
               <div className="cfc-upload-section">
                 <label className="cfc-label">Certificate</label>
 
@@ -201,7 +271,7 @@ export const CFC = () => {
               </div>
 
               <div className="cfc-actions">
-                <Button variant="primary" disabled={!certificate || !hackathonName}>
+                <Button variant="primary" disabled={!certificate || !hackathonName || !hackathonMode || !registrationDate || !participationDate}>
                   Submit
                 </Button>
               </div>
@@ -335,6 +405,36 @@ export const CFC = () => {
                 floatingLabel
               />
 
+              <div className="cfc-input-group">
+                <label className="cfc-label">Mode of Internship</label>
+                <div className="cfc-radio-group">
+                  <label className="cfc-radio-label">
+                    <input
+                      type="radio"
+                      name="internshipMode"
+                      value="online"
+                      checked={internshipData.mode === 'online'}
+                      onChange={(e) => setInternshipData({ ...internshipData, mode: e.target.value })}
+                      className="cfc-radio-input"
+                    />
+                    <span className="cfc-radio-custom"></span>
+                    <span className="cfc-radio-text">Online</span>
+                  </label>
+                  <label className="cfc-radio-label">
+                    <input
+                      type="radio"
+                      name="internshipMode"
+                      value="offline"
+                      checked={internshipData.mode === 'offline'}
+                      onChange={(e) => setInternshipData({ ...internshipData, mode: e.target.value })}
+                      className="cfc-radio-input"
+                    />
+                    <span className="cfc-radio-custom"></span>
+                    <span className="cfc-radio-text">Offline</span>
+                  </label>
+                </div>
+              </div>
+
               <Input
                 label="Role"
                 placeholder="e.g., Software Development Intern"
@@ -344,26 +444,116 @@ export const CFC = () => {
               />
 
               <Input
-                label="Duration"
-                placeholder="e.g., 3 months"
+                label="Duration of Internship"
+                placeholder="e.g., 3 months or 01/2025 - 04/2025"
                 value={internshipData.duration}
                 onChange={(e) => setInternshipData({ ...internshipData, duration: e.target.value })}
                 floatingLabel
               />
 
-              <div className="cfc-textarea-group">
-                <label className="cfc-label">Description</label>
-                <textarea
-                  className="cfc-textarea"
-                  rows="4"
-                  placeholder="Describe your role and responsibilities..."
-                  value={internshipData.description}
-                  onChange={(e) => setInternshipData({ ...internshipData, description: e.target.value })}
-                />
+              {/* Completion Certificate Upload */}
+              <div className="cfc-upload-section">
+                <label className="cfc-label">Internship Completion Certificate *</label>
+
+                {!completionCertPreview ? (
+                  <label className="cfc-upload-card">
+                    <input
+                      type="file"
+                      accept="image/*,.pdf"
+                      onChange={handleCompletionCertUpload}
+                      className="cfc-file-input"
+                    />
+                    <motion.div
+                      className="cfc-upload-content"
+                      whileHover={{ scale: 1.02 }}
+                    >
+                      <Upload size={40} className="cfc-upload-icon" />
+                      <h3 className="cfc-upload-title">Upload Certificate</h3>
+                      <p className="cfc-upload-subtitle">Click to browse</p>
+                    </motion.div>
+                  </label>
+                ) : (
+                  <motion.div
+                    className="cfc-preview-card"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                  >
+                    {internshipData.completionCertificate.type.startsWith('image/') ? (
+                      <img src={completionCertPreview} alt="Certificate" className="cfc-preview-image" />
+                    ) : (
+                      <div className="cfc-preview-pdf">
+                        <Upload size={48} />
+                        <p>{internshipData.completionCertificate.name}</p>
+                      </div>
+                    )}
+                    <button
+                      className="cfc-preview-remove"
+                      onClick={() => {
+                        setInternshipData({ ...internshipData, completionCertificate: null });
+                        setCompletionCertPreview(null);
+                      }}
+                    >
+                      Change
+                    </button>
+                  </motion.div>
+                )}
+              </div>
+
+              {/* Letter of Recommendation Upload (Optional) */}
+              <div className="cfc-upload-section">
+                <label className="cfc-label">Letter of Recommendation (Optional)</label>
+
+                {!lorPreview ? (
+                  <label className="cfc-upload-card">
+                    <input
+                      type="file"
+                      accept="image/*,.pdf"
+                      onChange={handleLorUpload}
+                      className="cfc-file-input"
+                    />
+                    <motion.div
+                      className="cfc-upload-content"
+                      whileHover={{ scale: 1.02 }}
+                    >
+                      <Upload size={40} className="cfc-upload-icon" />
+                      <h3 className="cfc-upload-title">Upload Letter</h3>
+                      <p className="cfc-upload-subtitle">Click to browse</p>
+                    </motion.div>
+                  </label>
+                ) : (
+                  <motion.div
+                    className="cfc-preview-card"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                  >
+                    {internshipData.letterOfRecommendation.type.startsWith('image/') ? (
+                      <img src={lorPreview} alt="Letter" className="cfc-preview-image" />
+                    ) : (
+                      <div className="cfc-preview-pdf">
+                        <Upload size={48} />
+                        <p>{internshipData.letterOfRecommendation.name}</p>
+                      </div>
+                    )}
+                    <button
+                      className="cfc-preview-remove"
+                      onClick={() => {
+                        setInternshipData({ ...internshipData, letterOfRecommendation: null });
+                        setLorPreview(null);
+                      }}
+                    >
+                      Change
+                    </button>
+                  </motion.div>
+                )}
               </div>
 
               <div className="cfc-actions">
-                <Button variant="primary">Save Progress</Button>
+                <Button
+                  variant="primary"
+                  disabled={!internshipData.company || !internshipData.mode || !internshipData.role || !internshipData.duration || !internshipData.completionCertificate}
+                >
+                  Submit
+                </Button>
               </div>
             </GlassCard>
           </motion.div>
@@ -425,31 +615,57 @@ export const CFC = () => {
                 })}
               </div>
 
+              <div className="cfc-textarea-group">
+                <label className="cfc-label">Problem Statement</label>
+                <textarea
+                  className="cfc-textarea"
+                  rows="4"
+                  placeholder="Describe the problem your GenAI project addresses..."
+                  value={genAIData.problemStatement}
+                  onChange={(e) => setGenAIData({ ...genAIData, problemStatement: e.target.value })}
+                />
+              </div>
+
               <Input
-                label="Course Name"
-                placeholder="e.g., Introduction to Generative AI"
-                value={genAIData.courseName}
-                onChange={(e) => setGenAIData({ ...genAIData, courseName: e.target.value })}
+                label="Solution Type"
+                placeholder="e.g., Website, Web App, Mobile App, Desktop App"
+                value={genAIData.solutionType}
+                onChange={(e) => setGenAIData({ ...genAIData, solutionType: e.target.value })}
                 floatingLabel
               />
 
               <Input
-                label="Platform"
-                placeholder="e.g., Coursera, edX, Udacity"
-                value={genAIData.platform}
-                onChange={(e) => setGenAIData({ ...genAIData, platform: e.target.value })}
+                label="Innovation Technology"
+                placeholder="e.g., Machine Learning, NLP, Computer Vision"
+                value={genAIData.innovationTechnology}
+                onChange={(e) => setGenAIData({ ...genAIData, innovationTechnology: e.target.value })}
                 floatingLabel
               />
 
               <Input
-                label="Completion Date"
-                type="date"
-                value={genAIData.completionDate}
-                onChange={(e) => setGenAIData({ ...genAIData, completionDate: e.target.value })}
+                label="Innovation Industry"
+                placeholder="e.g., Healthcare, Finance, Education, E-commerce"
+                value={genAIData.innovationIndustry}
+                onChange={(e) => setGenAIData({ ...genAIData, innovationIndustry: e.target.value })}
+                floatingLabel
+              />
+
+              <Input
+                label="GitHub Repository"
+                placeholder="https://github.com/username/repository"
+                value={genAIData.githubRepo}
+                onChange={(e) => setGenAIData({ ...genAIData, githubRepo: e.target.value })}
+                icon={<ExternalLink size={20} />}
+                floatingLabel
               />
 
               <div className="cfc-actions">
-                <Button variant="primary">Submit Course</Button>
+                <Button
+                  variant="primary"
+                  disabled={!genAIData.problemStatement || !genAIData.solutionType || !genAIData.innovationTechnology || !genAIData.innovationIndustry || !genAIData.githubRepo}
+                >
+                  Submit Project
+                </Button>
               </div>
             </GlassCard>
           </motion.div>

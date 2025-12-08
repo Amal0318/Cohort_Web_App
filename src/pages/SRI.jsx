@@ -47,27 +47,10 @@ export const SRI = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        <div className="sri-header-content">
-          <div className="sri-header-text">
-            <h1 className="sri-title">Social Responsibility Initiative</h1>
-            <p className="sri-subtitle">
-              Make a difference in your community through meaningful social service
-            </p>
-          </div>
-          <motion.div
-            className="sri-header-icon"
-            animate={{
-              rotate: [0, 10, -10, 0],
-            }}
-            transition={{
-              duration: 3,
-              repeat: Infinity,
-              ease: 'easeInOut',
-            }}
-          >
-            <Heart size={64} />
-          </motion.div>
-        </div>
+        <h1 className="sri-title">Social Responsibility Initiative</h1>
+        <p className="sri-subtitle">
+          Make a difference in your community through meaningful social service
+        </p>
       </motion.div>
 
       <div className="sri-layout">
