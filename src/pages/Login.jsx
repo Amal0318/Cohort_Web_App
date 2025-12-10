@@ -69,34 +69,37 @@ const Login = () => {
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (validateForm()) {
-            // Simulate authentication with role
-            const userData = {
-                email: formData.email,
-                name: formData.name || formData.email.split('@')[0],
-            };
+            try {
+                // Use email as username for login
+                await login(formData.email, formData.password, selectedRole);
 
-            login(userData, selectedRole);
-
-            // Navigate based on role
-            switch (selectedRole) {
-                case 'student':
-                    navigate('/');
-                    break;
-                case 'mentor':
-                    navigate('/mentor-dashboard');
-                    break;
-                case 'floorwing':
-                    navigate('/floorwing-dashboard');
-                    break;
-                case 'admin':
-                    navigate('/admin-dashboard');
-                    break;
-                default:
-                    navigate('/');
+                // Navigate based on role
+                switch (selectedRole) {
+                    case 'student':
+                        navigate('/');
+                        break;
+                    case 'mentor':
+                        navigate('/mentor-dashboard');
+                        break;
+                    case 'floorwing':
+                        navigate('/floorwing-dashboard');
+                        break;
+                    case 'admin':
+                        navigate('/admin-dashboard');
+                        break;
+                    default:
+                        navigate('/');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                setErrors({
+                    email: 'Invalid email or password',
+                    password: 'Please check your credentials',
+                });
             }
         }
     };

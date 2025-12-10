@@ -6,6 +6,7 @@ from rest_framework import permissions
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.views import TokenObtainPairView as BaseTokenObtainPairView
 from apps.jwt_serializers import EmailTokenObtainPairSerializer
+from apps.users_views import UserProfileView
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
@@ -39,6 +40,9 @@ urlpatterns = [
     # JWT Authentication endpoints (with email support)
     path('api/auth/token/', EmailTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    
+    # User Profile
+    path('api/auth/user/', UserProfileView.as_view(), name='user_profile'),
     
     # App URLs
     path('api/clt/', include('apps.clt.urls')),

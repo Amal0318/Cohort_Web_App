@@ -215,6 +215,16 @@ class GenAIProjectSubmissionViewSet(viewsets.ModelViewSet):
             return GenAIProjectSubmissionCreateSerializer
         return GenAIProjectSubmissionSerializer
     
+    def create(self, request, *args, **kwargs):
+        """Override create to add detailed error logging"""
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            print(f"Validation errors: {serializer.errors}")
+            print(f"Request data: {request.data}")
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        self.perform_create(serializer)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
     @action(detail=True, methods=['post'])
     def submit(self, request, pk=None):
         """Submit a GenAI project for review"""

@@ -192,10 +192,10 @@ class GenAIProjectSubmission(models.Model):
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='genai_projects')
     problem_statement = models.TextField(help_text="Description of the problem being solved")
-    solution_type = models.CharField(max_length=50, choices=SOLUTION_TYPE_CHOICES, 
+    solution_type = models.CharField(max_length=200, blank=True, 
                                     help_text="Type of solution")
     innovation_technology = models.TextField(help_text="Technologies and innovations used")
-    innovation_industry = models.CharField(max_length=50, choices=INDUSTRY_CHOICES,
+    innovation_industry = models.CharField(max_length=200, blank=True,
                                           help_text="Target industry")
     github_repo = models.URLField(max_length=500, help_text="GitHub repository link")
     demo_link = models.URLField(max_length=500, blank=True, null=True, 

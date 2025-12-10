@@ -21,16 +21,21 @@ export const authService = {
     });
     
     const { access, refresh } = response.data;
-    // Create a user object with username and email
-    const user = { 
-      username, 
-      email: `${username}@example.com`, // Placeholder, will be enhanced with profile endpoint later
-      id: null 
-    };
     
-    // Store tokens in localStorage
+    // Store tokens in localStorage first
     localStorage.setItem('accessToken', access);
     localStorage.setItem('refreshToken', refresh);
+    
+    // Fetch user profile with the access token
+    const userResponse = await axios.get(`${API_BASE_URL}/auth/user/`, {
+      headers: {
+        Authorization: `Bearer ${access}`,
+      },
+    });
+    
+    const user = userResponse.data;
+    
+    // Store user in localStorage
     localStorage.setItem('user', JSON.stringify(user));
     
     // Return both tokens and user

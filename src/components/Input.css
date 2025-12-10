@@ -78,8 +78,8 @@
 
 /* Floating Label */
 .input-field--floating {
-  padding-top: 1.5rem;
-  padding-bottom: 0.5rem;
+  padding-top: 1.75rem;
+  padding-bottom: 0.75rem;
 }
 
 .input-label {
@@ -89,10 +89,11 @@
   transform: translateY(-50%);
   pointer-events: none;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  padding: 0 0.25rem;
+  padding: 0 0.5rem;
   font-family: 'Inter', sans-serif;
   z-index: 2;
   white-space: nowrap;
+  border-radius: 4px;
 }
 
 [data-theme='light'] .input-label {
@@ -106,17 +107,20 @@
 }
 
 .input-label--active {
-  top: -0.5rem;
+  top: -0.75rem;
   font-size: 0.75rem;
   font-weight: 600;
+  padding: 0.125rem 0.5rem;
 }
 
 [data-theme='light'] .input-label--active {
-  background: linear-gradient(180deg, #FFFFFF 0%, #FFFFFF 50%, rgba(255, 255, 255, 0.95) 100%);
+  background: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 [data-theme='dark'] .input-label--active {
-  background: linear-gradient(180deg, #121212 0%, #121212 50%, rgba(18, 18, 18, 0.95) 100%);
+  background: #121212;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 /* Static Label */
@@ -138,27 +142,35 @@
 
 /* With Icon */
 .input-field--with-icon {
-  padding-left: 3rem;
+  padding-left: 3.5rem;
+}
+
+.input-label--with-icon {
+  left: 3.5rem !important;
+}
+
+.input-label--with-icon.input-label--active {
+  left: 1.25rem !important;
 }
 
 .input-icon {
   position: absolute;
-  left: 1rem;
+  left: 1.25rem;
   top: 50%;
   transform: translateY(-50%);
   pointer-events: none;
   display: flex;
   align-items: center;
-  z-index: 2;
+  z-index: 3;
   justify-content: center;
 }
 
 [data-theme='light'] .input-icon {
-  color: #616161;
+  color: #424242;
 }
 
 [data-theme='dark'] .input-icon {
-  color: #BDBDBD;
+  color: #E0E0E0;
 }
 
 .input-container--focused .input-icon {

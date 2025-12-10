@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 // eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Video, Briefcase, Brain, Upload, CheckCircle, ExternalLink } from 'lucide-react';
+import { Trophy, Video, Briefcase, Brain, Upload, CheckCircle, ExternalLink, Loader2 } from 'lucide-react';
 import GlassCard from '../../components/GlassCard';
 import Button from '../../components/Button';
 import Input from '../../components/Input';
+import * as cfcService from '../../services/cfc';
 import './CFC.css';
 
 const TABS = [
@@ -16,17 +17,20 @@ const TABS = [
 
 export const CFC = () => {
   const [activeTab, setActiveTab] = useState('hackathon');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
 
   // Hackathon state
-  const [certificate, setCertificate] = useState(null);
-  const [certificatePreview, setCertificatePreview] = useState(null);
   const [hackathonName, setHackathonName] = useState('');
   const [hackathonMode, setHackathonMode] = useState('');
   const [registrationDate, setRegistrationDate] = useState('');
   const [participationDate, setParticipationDate] = useState('');
+  const [certificateLink, setCertificateLink] = useState('');
 
   // BMC Video state
   const [videoUrl, setVideoUrl] = useState('');
+  const [videoDescription, setVideoDescription] = useState('');
   const [videoPreview, setVideoPreview] = useState(null);
 
   // Internship state
@@ -35,11 +39,10 @@ export const CFC = () => {
     mode: '',
     role: '',
     duration: '',
-    completionCertificate: null,
-    letterOfRecommendation: null,
+    internshipStatus: 1,
+    completionCertificateLink: '',
+    lorLink: '',
   });
-  const [completionCertPreview, setCompletionCertPreview] = useState(null);
-  const [lorPreview, setLorPreview] = useState(null);
 
   // GenAI state
   const [genAIData, setGenAIData] = useState({
@@ -48,31 +51,19 @@ export const CFC = () => {
     innovationTechnology: '',
     innovationIndustry: '',
     githubRepo: '',
+    demoLink: '',
   });
 
-  const handleCertificateUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setCertificate(file);
-      setCertificatePreview(URL.createObjectURL(file));
+  // Clear messages after 5 seconds
+  useEffect(() => {
+    if (success || error) {
+      const timer = setTimeout(() => {
+        setSuccess(null);
+        setError(null);
+      }, 5000);
+      return () => clearTimeout(timer);
     }
-  };
-
-  const handleCompletionCertUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setInternshipData({ ...internshipData, completionCertificate: file });
-      setCompletionCertPreview(URL.createObjectURL(file));
-    }
-  };
-
-  const handleLorUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setInternshipData({ ...internshipData, letterOfRecommendation: file });
-      setLorPreview(URL.createObjectURL(file));
-    }
-  };
+  }, [success, error]);
 
   const handleVideoUrlChange = (e) => {
     const url = e.target.value;
@@ -86,8 +77,179 @@ export const CFC = () => {
     }
   };
 
+  // ==================== SUBMISSION HANDLERS ====================
+
+  const handleHackathonSubmit = async () => {
+    if (!hackathonName || !hackathonMode || !registrationDate || !participationDate || !certificateLink) {
+      setError('Please fill in all required fields');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const data = {
+        hackathon_name: hackathonName,
+        mode: hackathonMode,
+        registration_date: registrationDate,
+        participation_date: participationDate,
+        certificate_link: certificateLink,
+      };
+      
+      await cfcService.createHackathonSubmission(data);
+      setSuccess('Hackathon submission created successfully!');
+      
+      // Reset form
+      setHackathonName('');
+      setHackathonMode('');
+      setRegistrationDate('');
+      setParticipationDate('');
+      setCertificateLink('');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to submit hackathon');
+      console.error('Hackathon submission error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBMCVideoSubmit = async () => {
+    if (!videoUrl) {
+      setError('Please enter a video URL');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const data = {
+        video_url: videoUrl,
+        description: videoDescription || '',
+      };
+      
+      await cfcService.createBMCVideoSubmission(data);
+      setSuccess('BMC Video submitted successfully!');
+      
+      // Reset form
+      setVideoUrl('');
+      setVideoDescription('');
+      setVideoPreview(null);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to submit BMC video');
+      console.error('BMC Video submission error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInternshipSubmit = async () => {
+    if (!internshipData.company || !internshipData.mode || !internshipData.role || !internshipData.duration) {
+      setError('Please fill in all required fields');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const data = {
+        company: internshipData.company,
+        mode: internshipData.mode,
+        role: internshipData.role,
+        duration: internshipData.duration,
+        internship_status: internshipData.internshipStatus,
+        completion_certificate_link: internshipData.completionCertificateLink || '',
+        lor_link: internshipData.lorLink || '',
+      };
+      
+      await cfcService.createInternshipSubmission(data);
+      setSuccess('Internship details submitted successfully!');
+      
+      // Reset form
+      setInternshipData({
+        company: '',
+        mode: '',
+        role: '',
+        duration: '',
+        internshipStatus: 1,
+        completionCertificateLink: '',
+        lorLink: '',
+      });
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to submit internship');
+      console.error('Internship submission error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGenAISubmit = async () => {
+    if (!genAIData.problemStatement || !genAIData.solutionType || 
+        !genAIData.innovationTechnology || !genAIData.innovationIndustry || 
+        !genAIData.githubRepo) {
+      setError('Please fill in all required fields');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const data = {
+        problem_statement: genAIData.problemStatement,
+        solution_type: genAIData.solutionType,
+        innovation_technology: genAIData.innovationTechnology,
+        innovation_industry: genAIData.innovationIndustry,
+        github_repo: genAIData.githubRepo,
+        demo_link: genAIData.demoLink || '',
+      };
+      
+      await cfcService.createGenAIProjectSubmission(data);
+      setSuccess('GenAI Project submitted successfully!');
+      
+      // Reset form
+      setGenAIData({
+        problemStatement: '',
+        solutionType: '',
+        innovationTechnology: '',
+        innovationIndustry: '',
+        githubRepo: '',
+        demoLink: '',
+      });
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to submit GenAI project');
+      console.error('GenAI submission error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="cfc-container">
+      {/* Success/Error Notifications */}
+      <AnimatePresence>
+        {success && (
+          <motion.div
+            className="cfc-notification cfc-notification--success"
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -50 }}
+          >
+            <CheckCircle size={20} />
+            <span>{success}</span>
+          </motion.div>
+        )}
+        {error && (
+          <motion.div
+            className="cfc-notification cfc-notification--error"
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -50 }}
+          >
+            <ExternalLink size={20} />
+            <span>{error}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <motion.div
         className="cfc-header"
@@ -207,82 +369,29 @@ export const CFC = () => {
                 floatingLabel
               />
 
-              <div className="cfc-upload-section">
-                <label className="cfc-label">Certificate</label>
-
-                {!certificatePreview ? (
-                  <label className="cfc-upload-card">
-                    <input
-                      type="file"
-                      accept="image/*,.pdf"
-                      onChange={handleCertificateUpload}
-                      className="cfc-file-input"
-                    />
-                    <motion.div
-                      className="cfc-upload-content"
-                      whileHover={{ scale: 1.02 }}
-                    >
-                      <Upload size={48} className="cfc-upload-icon" />
-                      <h3 className="cfc-upload-title">Upload Certificate</h3>
-                      <p className="cfc-upload-subtitle">Click to browse or drag & drop</p>
-                    </motion.div>
-                  </label>
-                ) : (
-                  <motion.div
-                    className="cfc-preview-card"
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                  >
-                    {certificate.type.startsWith('image/') ? (
-                      <img src={certificatePreview} alt="Certificate" className="cfc-preview-image" />
-                    ) : (
-                      <div className="cfc-preview-pdf">
-                        <Upload size={64} />
-                        <p>{certificate.name}</p>
-                      </div>
-                    )}
-
-                    <motion.div
-                      className="cfc-verified-badge"
-                      initial={{ scale: 0, rotate: -180 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      transition={{ delay: 0.3, type: 'spring' }}
-                    >
-                      <CheckCircle size={24} />
-                      <span>Verified</span>
-                    </motion.div>
-
-                    <button
-                      className="cfc-preview-remove"
-                      onClick={() => {
-                        setCertificate(null);
-                        setCertificatePreview(null);
-                      }}
-                    >
-                      Change
-                    </button>
-                  </motion.div>
-                )}
-              </div>
+              <Input
+                label="Certificate Link (Google Drive)"
+                placeholder="https://drive.google.com/file/d/..."
+                value={certificateLink}
+                onChange={(e) => setCertificateLink(e.target.value)}
+                icon={<ExternalLink size={20} />}
+                floatingLabel
+              />
 
               <div className="cfc-actions">
                 <Button
                   variant="primary"
-                  onClick={() => {
-                    if (certificate && hackathonName && hackathonMode && registrationDate && participationDate) {
-                      alert('Hackathon submission successful!');
-                      setCertificate(null);
-                      setCertificatePreview(null);
-                      setHackathonName('');
-                      setHackathonMode('');
-                      setRegistrationDate('');
-                      setParticipationDate('');
-                    } else {
-                      alert('Please fill in all required fields');
-                    }
-                  }}
+                  onClick={handleHackathonSubmit}
+                  disabled={loading}
                 >
-                  Submit
+                  {loading ? (
+                    <>
+                      <Loader2 size={20} className="animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    'Submit'
+                  )}
                 </Button>
               </div>
             </GlassCard>
@@ -317,6 +426,14 @@ export const CFC = () => {
                 floatingLabel
               />
 
+              <Input
+                label="Description (Optional)"
+                placeholder="Describe your Business Model Canvas..."
+                value={videoDescription}
+                onChange={(e) => setVideoDescription(e.target.value)}
+                floatingLabel
+              />
+
               {videoPreview && (
                 <motion.div
                   className="cfc-video-preview"
@@ -345,17 +462,17 @@ export const CFC = () => {
               <div className="cfc-actions">
                 <Button
                   variant="primary"
-                  onClick={() => {
-                    if (videoUrl) {
-                      alert('BMC Video submitted successfully!');
-                      setVideoUrl('');
-                      setVideoPreview(null);
-                    } else {
-                      alert('Please enter a video URL');
-                    }
-                  }}
+                  onClick={handleBMCVideoSubmit}
+                  disabled={loading}
                 >
-                  Submit Video
+                  {loading ? (
+                    <>
+                      <Loader2 size={20} className="animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    'Submit Video'
+                  )}
                 </Button>
               </div>
             </GlassCard>
@@ -396,25 +513,37 @@ export const CFC = () => {
                     <input
                       type="radio"
                       name="internshipMode"
-                      value="online"
-                      checked={internshipData.mode === 'online'}
+                      value="remote"
+                      checked={internshipData.mode === 'remote'}
                       onChange={(e) => setInternshipData({ ...internshipData, mode: e.target.value })}
                       className="cfc-radio-input"
                     />
                     <span className="cfc-radio-custom"></span>
-                    <span className="cfc-radio-text">Online</span>
+                    <span className="cfc-radio-text">Remote</span>
                   </label>
                   <label className="cfc-radio-label">
                     <input
                       type="radio"
                       name="internshipMode"
-                      value="offline"
-                      checked={internshipData.mode === 'offline'}
+                      value="onsite"
+                      checked={internshipData.mode === 'onsite'}
                       onChange={(e) => setInternshipData({ ...internshipData, mode: e.target.value })}
                       className="cfc-radio-input"
                     />
                     <span className="cfc-radio-custom"></span>
-                    <span className="cfc-radio-text">Offline</span>
+                    <span className="cfc-radio-text">On-site</span>
+                  </label>
+                  <label className="cfc-radio-label">
+                    <input
+                      type="radio"
+                      name="internshipMode"
+                      value="hybrid"
+                      checked={internshipData.mode === 'hybrid'}
+                      onChange={(e) => setInternshipData({ ...internshipData, mode: e.target.value })}
+                      className="cfc-radio-input"
+                    />
+                    <span className="cfc-radio-custom"></span>
+                    <span className="cfc-radio-text">Hybrid</span>
                   </label>
                 </div>
               </div>
@@ -435,124 +564,92 @@ export const CFC = () => {
                 floatingLabel
               />
 
-              {/* Completion Certificate Upload */}
-              <div className="cfc-upload-section">
-                <label className="cfc-label">Internship Completion Certificate *</label>
-
-                {!completionCertPreview ? (
-                  <label className="cfc-upload-card">
+              <div className="cfc-input-group">
+                <label className="cfc-label">Internship Status</label>
+                <div className="cfc-radio-group">
+                  <label className="cfc-radio-label">
                     <input
-                      type="file"
-                      accept="image/*,.pdf"
-                      onChange={handleCompletionCertUpload}
-                      className="cfc-file-input"
+                      type="radio"
+                      name="internshipStatus"
+                      value="1"
+                      checked={internshipData.internshipStatus === 1}
+                      onChange={(e) => setInternshipData({ ...internshipData, internshipStatus: Number(e.target.value) })}
+                      className="cfc-radio-input"
                     />
-                    <motion.div
-                      className="cfc-upload-content"
-                      whileHover={{ scale: 1.02 }}
-                    >
-                      <Upload size={40} className="cfc-upload-icon" />
-                      <h3 className="cfc-upload-title">Upload Certificate</h3>
-                      <p className="cfc-upload-subtitle">Click to browse</p>
-                    </motion.div>
+                    <span className="cfc-radio-custom"></span>
+                    <span className="cfc-radio-text">Application</span>
                   </label>
-                ) : (
-                  <motion.div
-                    className="cfc-preview-card"
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                  >
-                    {internshipData.completionCertificate.type.startsWith('image/') ? (
-                      <img src={completionCertPreview} alt="Certificate" className="cfc-preview-image" />
-                    ) : (
-                      <div className="cfc-preview-pdf">
-                        <Upload size={48} />
-                        <p>{internshipData.completionCertificate.name}</p>
-                      </div>
-                    )}
-                    <button
-                      className="cfc-preview-remove"
-                      onClick={() => {
-                        setInternshipData({ ...internshipData, completionCertificate: null });
-                        setCompletionCertPreview(null);
-                      }}
-                    >
-                      Change
-                    </button>
-                  </motion.div>
-                )}
+                  <label className="cfc-radio-label">
+                    <input
+                      type="radio"
+                      name="internshipStatus"
+                      value="2"
+                      checked={internshipData.internshipStatus === 2}
+                      onChange={(e) => setInternshipData({ ...internshipData, internshipStatus: Number(e.target.value) })}
+                      className="cfc-radio-input"
+                    />
+                    <span className="cfc-radio-custom"></span>
+                    <span className="cfc-radio-text">Interview</span>
+                  </label>
+                  <label className="cfc-radio-label">
+                    <input
+                      type="radio"
+                      name="internshipStatus"
+                      value="3"
+                      checked={internshipData.internshipStatus === 3}
+                      onChange={(e) => setInternshipData({ ...internshipData, internshipStatus: Number(e.target.value) })}
+                      className="cfc-radio-input"
+                    />
+                    <span className="cfc-radio-custom"></span>
+                    <span className="cfc-radio-text">Offer</span>
+                  </label>
+                  <label className="cfc-radio-label">
+                    <input
+                      type="radio"
+                      name="internshipStatus"
+                      value="4"
+                      checked={internshipData.internshipStatus === 4}
+                      onChange={(e) => setInternshipData({ ...internshipData, internshipStatus: Number(e.target.value) })}
+                      className="cfc-radio-input"
+                    />
+                    <span className="cfc-radio-custom"></span>
+                    <span className="cfc-radio-text">Completion</span>
+                  </label>
+                </div>
               </div>
 
-              {/* Letter of Recommendation Upload (Optional) */}
-              <div className="cfc-upload-section">
-                <label className="cfc-label">Letter of Recommendation (Optional)</label>
+              <Input
+                label="Completion Certificate Link (Google Drive - Optional)"
+                placeholder="https://drive.google.com/file/d/..."
+                value={internshipData.completionCertificateLink}
+                onChange={(e) => setInternshipData({ ...internshipData, completionCertificateLink: e.target.value })}
+                icon={<ExternalLink size={20} />}
+                floatingLabel
+              />
 
-                {!lorPreview ? (
-                  <label className="cfc-upload-card">
-                    <input
-                      type="file"
-                      accept="image/*,.pdf"
-                      onChange={handleLorUpload}
-                      className="cfc-file-input"
-                    />
-                    <motion.div
-                      className="cfc-upload-content"
-                      whileHover={{ scale: 1.02 }}
-                    >
-                      <Upload size={40} className="cfc-upload-icon" />
-                      <h3 className="cfc-upload-title">Upload Letter</h3>
-                      <p className="cfc-upload-subtitle">Click to browse</p>
-                    </motion.div>
-                  </label>
-                ) : (
-                  <motion.div
-                    className="cfc-preview-card"
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                  >
-                    {internshipData.letterOfRecommendation.type.startsWith('image/') ? (
-                      <img src={lorPreview} alt="Letter" className="cfc-preview-image" />
-                    ) : (
-                      <div className="cfc-preview-pdf">
-                        <Upload size={48} />
-                        <p>{internshipData.letterOfRecommendation.name}</p>
-                      </div>
-                    )}
-                    <button
-                      className="cfc-preview-remove"
-                      onClick={() => {
-                        setInternshipData({ ...internshipData, letterOfRecommendation: null });
-                        setLorPreview(null);
-                      }}
-                    >
-                      Change
-                    </button>
-                  </motion.div>
-                )}
-              </div>
+              <Input
+                label="Letter of Recommendation Link (Google Drive - Optional)"
+                placeholder="https://drive.google.com/file/d/..."
+                value={internshipData.lorLink}
+                onChange={(e) => setInternshipData({ ...internshipData, lorLink: e.target.value })}
+                icon={<ExternalLink size={20} />}
+                floatingLabel
+              />
 
               <div className="cfc-actions">
                 <Button
                   variant="primary"
-                  onClick={() => {
-                    if (internshipData.company && internshipData.mode && internshipData.role && internshipData.duration && internshipData.completionCertificate) {
-                      alert('Internship details submitted successfully!');
-                      setInternshipData({
-                        company: '',
-                        mode: '',
-                        role: '',
-                        duration: '',
-                        completionCertificate: null,
-                        letterOfRecommendation: null,
-                      });
-                      setCompletionCertPreview(null);
-                      setLorPreview(null);
-                    } else {
-                      alert('Please fill in all required fields');
-                    }
-                  }}
+                  onClick={handleInternshipSubmit}
+                  disabled={loading}
                 >
-                  Submit
+                  {loading ? (
+                    <>
+                      <Loader2 size={20} className="animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    'Submit Internship'
+                  )}
                 </Button>
               </div>
             </GlassCard>
@@ -622,25 +719,29 @@ export const CFC = () => {
                 floatingLabel
               />
 
+              <Input
+                label="Demo Link (Optional)"
+                placeholder="https://your-demo-link.com"
+                value={genAIData.demoLink}
+                onChange={(e) => setGenAIData({ ...genAIData, demoLink: e.target.value })}
+                icon={<ExternalLink size={20} />}
+                floatingLabel
+              />
+
               <div className="cfc-actions">
                 <Button
                   variant="primary"
-                  onClick={() => {
-                    if (genAIData.problemStatement && genAIData.solutionType && genAIData.innovationTechnology && genAIData.innovationIndustry && genAIData.githubRepo) {
-                      alert('GenAI Project submitted successfully!');
-                      setGenAIData({
-                        problemStatement: '',
-                        solutionType: '',
-                        innovationTechnology: '',
-                        innovationIndustry: '',
-                        githubRepo: '',
-                      });
-                    } else {
-                      alert('Please fill in all required fields');
-                    }
-                  }}
+                  onClick={handleGenAISubmit}
+                  disabled={loading}
                 >
-                  Submit Project
+                  {loading ? (
+                    <>
+                      <Loader2 size={20} className="animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    'Submit Project'
+                  )}
                 </Button>
               </div>
             </GlassCard>

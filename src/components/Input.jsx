@@ -37,10 +37,11 @@ export const Input = ({
         
         {floatingLabel && label && (
           <motion.label
-            className={`input-label ${isFocused || hasValue ? 'input-label--active' : ''}`}
+            className={`input-label ${isFocused || hasValue ? 'input-label--active' : ''} ${icon ? 'input-label--with-icon' : ''}`}
             initial={false}
             animate={{
-              top: isFocused || hasValue ? '-0.5rem' : '50%',
+              top: isFocused || hasValue ? '-0.75rem' : '50%',
+              left: (isFocused || hasValue) ? '1.25rem' : (icon ? '3rem' : '1.25rem'),
               fontSize: isFocused || hasValue ? '0.75rem' : '1rem',
               color: error ? '#E53935' : isFocused ? '#F7C948' : 'inherit',
             }}
