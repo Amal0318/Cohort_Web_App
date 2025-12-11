@@ -64,6 +64,12 @@ class CLTSubmissionCreateSerializer(serializers.ModelSerializer):
             'current_step', 'status'
         ]
     
+    def validate_duration(self, value):
+        """Ensure duration is at least 10 hours"""
+        if value is not None and value < 10:
+            raise serializers.ValidationError("Total duration must be at least 10 hours")
+        return value
+    
     def create(self, validated_data):
         # Set user from context
         validated_data['user'] = self.context['request'].user
@@ -83,6 +89,12 @@ class CLTSubmissionUpdateSerializer(serializers.ModelSerializer):
             'title', 'description', 'platform', 'completion_date', 'duration',
             'current_step', 'status'
         ]
+    
+    def validate_duration(self, value):
+        """Ensure duration is at least 10 hours"""
+        if value is not None and value < 10:
+            raise serializers.ValidationError("Total duration must be at least 10 hours")
+        return value
     
     def update(self, instance, validated_data):
         # If status changes to submitted, set submitted_at

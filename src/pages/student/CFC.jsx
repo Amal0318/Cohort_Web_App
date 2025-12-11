@@ -32,6 +32,8 @@ export const CFC = () => {
   const [videoUrl, setVideoUrl] = useState('');
   const [videoDescription, setVideoDescription] = useState('');
   const [videoPreview, setVideoPreview] = useState(null);
+  const [videoId, setVideoId] = useState(null);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
 
   // Internship state
   const [internshipData, setInternshipData] = useState({
@@ -68,12 +70,23 @@ export const CFC = () => {
   const handleVideoUrlChange = (e) => {
     const url = e.target.value;
     setVideoUrl(url);
+    setIsVideoPlaying(false);
 
     // Extract YouTube video ID
     const youtubeRegex = /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/;
     const match = url.match(youtubeRegex);
     if (match) {
+      setVideoId(match[1]);
       setVideoPreview(`https://img.youtube.com/vi/${match[1]}/mqdefault.jpg`);
+    } else {
+      setVideoId(null);
+      setVideoPreview(null);
+    }
+  };
+
+  const handlePlayVideo = () => {
+    if (videoId) {
+      setIsVideoPlaying(true);
     }
   };
 
@@ -440,22 +453,36 @@ export const CFC = () => {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                 >
-                  <img src={videoPreview} alt="Video thumbnail" className="cfc-video-thumbnail" />
-                  <motion.button
-                    className="cfc-watch-button"
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    animate={{
-                      boxShadow: [
-                        '0 0 20px rgba(247, 201, 72, 0.4)',
-                        '0 0 40px rgba(247, 201, 72, 0.8)',
-                        '0 0 20px rgba(247, 201, 72, 0.4)',
-                      ],
-                    }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    <Video size={32} />
-                  </motion.button>
+                  {!isVideoPlaying ? (
+                    <>
+                      <img src={videoPreview} alt="Video thumbnail" className="cfc-video-thumbnail" />
+                      <motion.button
+                        className="cfc-watch-button"
+                        onClick={handlePlayVideo}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        animate={{
+                          boxShadow: [
+                            '0 0 20px rgba(247, 201, 72, 0.4)',
+                            '0 0 40px rgba(247, 201, 72, 0.8)',
+                            '0 0 20px rgba(247, 201, 72, 0.4)',
+                          ],
+                        }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      >
+                        <Video size={32} />
+                      </motion.button>
+                    </>
+                  ) : (
+                    <iframe
+                      className="cfc-video-iframe"
+                      src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
+                      title="YouTube video player"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                    ></iframe>
+                  )}
                 </motion.div>
               )}
 

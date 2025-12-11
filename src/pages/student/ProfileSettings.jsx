@@ -5,9 +5,12 @@ import GlassCard from '../../components/GlassCard';
 import Button from '../../components/Button';
 import Input from '../../components/Input';
 import { getUserProfile, updateUserProfile } from '../../services/profile';
+import { useAuth } from '../../context/AuthContext';
+import authService from '../../services/auth';
 import './ProfileSettings.css';
 
 export const ProfileSettings = () => {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -63,12 +66,26 @@ export const ProfileSettings = () => {
 
     try {
       const updateData = {
+        first_name: profileData.first_name || '',
+        last_name: profileData.last_name || '',
         leetcode_id: profileData.leetcode_id || null,
         github_id: profileData.github_id || null,
         linkedin_id: profileData.linkedin_id || null,
       };
 
       await updateUserProfile(updateData);
+      
+      // Update user data in localStorage to reflect changes
+      const updatedUser = {
+        ...user,
+        first_name: profileData.first_name,
+        last_name: profileData.last_name,
+      };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      
+      // Force a page reload to update the auth context
+      window.location.reload();
+      
       setSuccess('Profile updated successfully!');
       
       // Clear success message after 3 seconds
@@ -106,7 +123,7 @@ export const ProfileSettings = () => {
 
         <GlassCard className="profile-settings-card">
           <form onSubmit={handleSubmit}>
-            {/* User Information (Read-only) */}
+            {/* User Information */}
             <div className="profile-settings-section">
               <div className="profile-settings-section-header">
                 <User size={20} />
@@ -122,13 +139,25 @@ export const ProfileSettings = () => {
                   <label>Email</label>
                   <p>{profileData.email}</p>
                 </div>
-                {(profileData.first_name || profileData.last_name) && (
-                  <div className="profile-settings-info-item">
-                    <label>Name</label>
-                    <p>{`${profileData.first_name} ${profileData.last_name}`.trim()}</p>
-                  </div>
-                )}
               </div>
+
+              <Input
+                label="First Name"
+                placeholder="Enter your first name"
+                value={profileData.first_name}
+                onChange={(e) => setProfileData({ ...profileData, first_name: e.target.value })}
+                icon={<User size={20} />}
+                floatingLabel
+              />
+
+              <Input
+                label="Last Name"
+                placeholder="Enter your last name"
+                value={profileData.last_name}
+                onChange={(e) => setProfileData({ ...profileData, last_name: e.target.value })}
+                icon={<User size={20} />}
+                floatingLabel
+              />
             </div>
 
             {/* Platform IDs (Editable) */}
@@ -141,44 +170,32 @@ export const ProfileSettings = () => {
                 Link your coding platform accounts for automatic data syncing
               </p>
 
-              <div className="profile-settings-input-group">
-                <div className="profile-settings-input-icon">
-                  <Code size={20} />
-                </div>
-                <Input
-                  label="LeetCode Username"
-                  placeholder="Enter your LeetCode username"
-                  value={profileData.leetcode_id}
-                  onChange={(e) => setProfileData({ ...profileData, leetcode_id: e.target.value })}
-                  floatingLabel
-                />
-              </div>
+              <Input
+                label="LeetCode Username"
+                placeholder="Enter your LeetCode username"
+                value={profileData.leetcode_id}
+                onChange={(e) => setProfileData({ ...profileData, leetcode_id: e.target.value })}
+                icon={<Code size={20} />}
+                floatingLabel
+              />
 
-              <div className="profile-settings-input-group">
-                <div className="profile-settings-input-icon">
-                  <Github size={20} />
-                </div>
-                <Input
-                  label="GitHub Username"
-                  placeholder="Enter your GitHub username"
-                  value={profileData.github_id}
-                  onChange={(e) => setProfileData({ ...profileData, github_id: e.target.value })}
-                  floatingLabel
-                />
-              </div>
+              <Input
+                label="GitHub Username"
+                placeholder="Enter your GitHub username"
+                value={profileData.github_id}
+                onChange={(e) => setProfileData({ ...profileData, github_id: e.target.value })}
+                icon={<Github size={20} />}
+                floatingLabel
+              />
 
-              <div className="profile-settings-input-group">
-                <div className="profile-settings-input-icon">
-                  <Linkedin size={20} />
-                </div>
-                <Input
-                  label="LinkedIn Profile URL or ID"
-                  placeholder="Enter your LinkedIn profile URL"
-                  value={profileData.linkedin_id}
-                  onChange={(e) => setProfileData({ ...profileData, linkedin_id: e.target.value })}
-                  floatingLabel
-                />
-              </div>
+              <Input
+                label="LinkedIn Profile URL or ID"
+                placeholder="Enter your LinkedIn profile URL"
+                value={profileData.linkedin_id}
+                onChange={(e) => setProfileData({ ...profileData, linkedin_id: e.target.value })}
+                icon={<Linkedin size={20} />}
+                floatingLabel
+              />
             </div>
 
             {/* Messages */}

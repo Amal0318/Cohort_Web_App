@@ -456,6 +456,13 @@
   object-fit: cover;
 }
 
+.cfc-video-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 1.5rem;
+}
+
 .cfc-watch-button {
   position: absolute;
   top: 50%;

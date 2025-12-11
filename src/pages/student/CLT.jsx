@@ -321,6 +321,7 @@ export const CLT = () => {
                 label="Total Duration (hours)"
                 type="number"
                 placeholder="e.g., 40"
+                min="10"
                 value={formData.duration}
                 onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
                 floatingLabel
@@ -331,6 +332,10 @@ export const CLT = () => {
                   variant="primary"
                   onClick={() => {
                     if (formData.title && formData.description) {
+                      if (formData.duration && parseInt(formData.duration) < 10) {
+                        alert('Total duration must be at least 10 hours');
+                        return;
+                      }
                       setCurrentStep(2);
                     } else {
                       alert('Please fill in all required fields');

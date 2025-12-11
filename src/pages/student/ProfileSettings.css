@@ -44,24 +44,28 @@
 }
 
 .profile-settings-section {
-  margin-bottom: 2.5rem;
+  margin-bottom: 3rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .profile-settings-section:last-child {
   margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
 }
 
 .profile-settings-section-header {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
   color: var(--primary-color);
 }
 
 .profile-settings-section-header h2 {
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: 1.4rem;
+  font-weight: 600;
   margin: 0;
 }
 
@@ -80,6 +84,7 @@
   background: rgba(255, 255, 255, 0.03);
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 1.5rem;
 }
 
 .profile-settings-info-item label {
@@ -98,28 +103,13 @@
   margin: 0;
 }
 
-/* Platform IDs Inputs */
-.profile-settings-input-group {
-  position: relative;
+/* Input spacing */
+.profile-settings-section .input-wrapper {
   margin-bottom: 1.5rem;
 }
 
-.profile-settings-input-icon {
-  position: absolute;
-  left: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-secondary);
-  z-index: 1;
-  pointer-events: none;
-}
-
-.profile-settings-input-group .input-wrapper {
+.profile-settings-section .input-wrapper:last-of-type {
   margin-bottom: 0;
-}
-
-.profile-settings-input-group input {
-  padding-left: 3rem;
 }
 
 /* Messages */

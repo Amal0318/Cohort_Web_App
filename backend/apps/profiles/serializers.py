@@ -24,9 +24,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
 class UserProfileUpdateSerializer(serializers.ModelSerializer):
     """Serializer for updating UserProfile"""
     
+    first_name = serializers.CharField(required=False, allow_blank=True)
+    last_name = serializers.CharField(required=False, allow_blank=True)
+    
     class Meta:
         model = UserProfile
-        fields = ['leetcode_id', 'github_id', 'linkedin_id']
+        fields = ['first_name', 'last_name', 'leetcode_id', 'github_id', 'linkedin_id']
     
     def validate_leetcode_id(self, value):
         """Validate LeetCode ID format"""
@@ -39,3 +42,20 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
         if value and len(value) < 3:
             raise serializers.ValidationError("GitHub ID must be at least 3 characters")
         return value
+    
+    def update(self, instance, validated_data):
+        """Update both User and UserProfile fields"""
+        # Extract User fields
+        first_name = validated_data.pop('first_name', None)
+        last_name = validated_data.pop('last_name', None)
+        
+        # Update User fields
+        user = instance.user
+        if first_name is not None:
+            user.first_name = first_name
+        if last_name is not None:
+            user.last_name = last_name
+        user.save()
+        
+        # Update UserProfile fields
+        return super().update(instance, validated_data)

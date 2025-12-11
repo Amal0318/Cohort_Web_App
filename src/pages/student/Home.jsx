@@ -148,7 +148,7 @@ export const HomePage = () => {
           animate={{ opacity: 1, y: 0 }}
           className="home-welcome"
         >
-          <h1>Welcome back, <span className="home-title-gradient">{user?.username || 'Student'}!</span></h1>
+          <h1>Welcome back, <span className="home-title-gradient">{user?.first_name || user?.username || 'Student'}!</span></h1>
           <p>Track your progress and stay updated with your learning journey</p>
         </motion.div>
 

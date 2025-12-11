@@ -105,7 +105,7 @@ function Navigation() {
         <div className="nav-actions">
           {user && (
             <div className="nav-user-info">
-              <span className="nav-user-role">{user.role}</span>
+              <span className="nav-user-role">{user.first_name || user.username || user.role}</span>
             </div>
           )}
           <ThemeToggle />
