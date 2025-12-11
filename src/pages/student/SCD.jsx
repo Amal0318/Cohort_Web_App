@@ -13,6 +13,7 @@ import {
   getLeetCodeProfiles,
   submitProfileForReview
 } from '../../services/scd';
+import { getUserProfile } from '../../services/profile';
 import './SCD.css';
 
 export const SCD = () => {
@@ -23,11 +24,58 @@ export const SCD = () => {
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [autoSynced, setAutoSynced] = useState(false);
 
-  // Load existing profile on mount
+  // Load existing profile and auto-sync on mount
   useEffect(() => {
-    loadProfile();
+    loadProfileAndAutoSync();
   }, []);
+
+  const loadProfileAndAutoSync = async () => {
+    try {
+      setLoading(true);
+      
+      // Get user profile to check for saved leetcode_id
+      const userProfile = await getUserProfile();
+      
+      // Load existing SCD profile
+      const profiles = await getLeetCodeProfiles();
+      if (profiles && profiles.length > 0) {
+        const latest = profiles[0];
+        setProfileData(latest);
+        setLeetcodeUsername(latest.leetcode_username || userProfile.leetcode_id || '');
+        setScreenshotUrl(latest.screenshot_url || '');
+      } else if (userProfile.leetcode_id) {
+        // No SCD profile exists, but user has saved leetcode_id
+        setLeetcodeUsername(userProfile.leetcode_id);
+      }
+
+      // Auto-sync if leetcode_id exists in profile and not already synced
+      if (userProfile.leetcode_id && !autoSynced) {
+        await performAutoSync(userProfile.leetcode_id);
+      }
+    } catch (err) {
+      console.error('Error loading profile:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const performAutoSync = async (username) => {
+    try {
+      setSyncing(true);
+      const response = await syncLeetCodeProfile(username.trim());
+      setProfileData(response.profile);
+      setAutoSynced(true);
+      setSuccess('Profile automatically synced using your saved LeetCode ID!');
+      setTimeout(() => setSuccess(''), 5000);
+    } catch (err) {
+      console.error('Auto-sync failed:', err);
+      // Don't show error for auto-sync failure, user can manually sync
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const loadProfile = async () => {
     try {

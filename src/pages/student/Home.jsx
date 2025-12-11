@@ -5,9 +5,10 @@ import { Link } from 'react-router-dom';
 import {
   Lightbulb, Heart, Trophy, Linkedin, Code,
   User, Mail, Phone, Users, Bell, Clock,
-  CheckCircle, XCircle, AlertCircle, FileText
+  CheckCircle, XCircle, AlertCircle, FileText, Settings
 } from 'lucide-react';
 import GlassCard from '../../components/GlassCard';
+import Button from '../../components/Button';
 import { useAuth } from '../../context/AuthContext';
 import './Home.css';
 
@@ -129,6 +130,11 @@ export const HomePage = () => {
                     <span>Mentor: Dr. Priya Sharma</span>
                   </div>
                 </div>
+                <Link to="/profile-settings" className="profile-settings-button">
+                  <Button variant="primary" icon={<Settings size={18} />}>
+                    Profile Settings
+                  </Button>
+                </Link>
               </div>
             </GlassCard>
           </motion.div>

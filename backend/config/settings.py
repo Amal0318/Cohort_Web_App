@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'apps.cfc',
     'apps.iipc',
     'apps.scd',
+    'apps.profiles',
 ]
 
 MIDDLEWARE = [

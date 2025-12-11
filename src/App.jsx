@@ -13,6 +13,7 @@ import SRI from './pages/student/SRI';
 import CFC from './pages/student/CFC';
 import IIPC from './pages/student/IIPC';
 import SCD from './pages/student/SCD';
+import ProfileSettings from './pages/student/ProfileSettings';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminLayout from './pages/admin/AdminLayout';
 import StudentProfiles from './pages/admin/profiles/StudentProfiles';
@@ -191,6 +192,7 @@ function AppContent() {
           <Route path="/cfc" element={<ProtectedRoute><CFC /></ProtectedRoute>} />
           <Route path="/iipc" element={<ProtectedRoute><IIPC /></ProtectedRoute>} />
           <Route path="/scd" element={<ProtectedRoute><SCD /></ProtectedRoute>} />
+          <Route path="/profile-settings" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
 
           {/* Admin Routes with Sidebar Layout */}
           <Route path="/admin-dashboard" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
@@ -205,7 +207,9 @@ function AppContent() {
             <Route path="notifications" element={<Notifications />} />
             <Route path="roles" element={<Roles />} />
             <Route path="settings" element={<Settings />} />
-          </Route>          {/* Other Role Dashboards */}
+          </Route>
+
+          {/* Other Role Dashboards */}
           <Route path="/mentor-dashboard" element={<ProtectedRoute><MentorDashboard /></ProtectedRoute>} />
           <Route path="/floorwing-dashboard" element={<ProtectedRoute><FloorWingDashboard /></ProtectedRoute>} />
         </Routes>
