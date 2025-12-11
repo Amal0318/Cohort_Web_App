@@ -16,6 +16,7 @@ export const CLT = () => {
     description: '',
     platform: '',
     completionDate: '',
+    duration: '',
     driveLink: '',
   });
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -316,6 +317,15 @@ export const CLT = () => {
                 floatingLabel
               />
 
+              <Input
+                label="Total Duration (hours)"
+                type="number"
+                placeholder="e.g., 40"
+                value={formData.duration}
+                onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                floatingLabel
+              />
+
               <div className="clt-form-actions">
                 <Button
                   variant="primary"
@@ -413,6 +423,11 @@ export const CLT = () => {
               <div className="clt-review-section">
                 <h3 className="clt-review-label">Completion Date</h3>
                 <p className="clt-review-value">{formData.completionDate}</p>
+              </div>
+
+              <div className="clt-review-section">
+                <h3 className="clt-review-label">Total Duration</h3>
+                <p className="clt-review-value">{formData.duration} hours</p>
               </div>
 
               <div className="clt-review-section">
