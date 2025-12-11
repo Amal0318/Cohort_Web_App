@@ -11,13 +11,21 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
     
     def validate(self, attrs):
         # Get the username field (which might contain email)
-        credentials = {
-            'username': attrs.get('username'),
-            'password': attrs.get('password')
-        }
+        username_or_email = attrs.get('username')
+        password = attrs.get('password')
         
-        # Use Django's authenticate which will use our custom backend
-        user = authenticate(**credentials)
+        # Try to find user by email first, then by username
+        user = None
+        try:
+            # Check if it's an email
+            if '@' in username_or_email:
+                user_obj = User.objects.filter(email=username_or_email).first()
+                if user_obj:
+                    user = authenticate(username=user_obj.username, password=password)
+            else:
+                user = authenticate(username=username_or_email, password=password)
+        except Exception:
+            pass
         
         if user is None:
             from rest_framework_simplejwt.exceptions import AuthenticationFailed

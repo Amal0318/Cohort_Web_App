@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
 
 /**
  * Authentication API Service
@@ -15,10 +15,14 @@ export const authService = {
    * @returns {Promise} - User data with tokens
    */
   login: async (username, password) => {
+    console.log('Auth service - attempting login with:', username);
+    
     const response = await axios.post(`${API_BASE_URL}/auth/token/`, {
       username,
       password,
     });
+    
+    console.log('Auth service - login response:', response.status);
     
     const { access, refresh } = response.data;
     

@@ -41,6 +41,8 @@ const Login = () => {
 
     const validateForm = () => {
         const newErrors = {};
+        
+        console.log('Validating form with data:', formData);
 
         if (!formData.email) {
             newErrors.email = 'Email is required';
@@ -64,6 +66,9 @@ const Login = () => {
                 newErrors.confirmPassword = 'Passwords do not match';
             }
         }
+        
+        console.log('Validation errors:', newErrors);
+        console.log('Validation result:', Object.keys(newErrors).length === 0);
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -74,6 +79,8 @@ const Login = () => {
 
         if (validateForm()) {
             try {
+                console.log('Login form - attempting login with:', formData.email);
+                
                 // Use email as username for login
                 await login(formData.email, formData.password, selectedRole);
 
@@ -96,8 +103,14 @@ const Login = () => {
                 }
             } catch (error) {
                 console.error('Login error:', error);
+                console.error('Error response:', error.response?.data);
+                
+                const errorMessage = error.response?.data?.detail || 
+                                   error.response?.data?.message || 
+                                   'Invalid email or password';
+                
                 setErrors({
-                    email: 'Invalid email or password',
+                    email: errorMessage,
                     password: 'Please check your credentials',
                 });
             }
