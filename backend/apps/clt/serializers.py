@@ -32,7 +32,7 @@ class CLTSubmissionSerializer(serializers.ModelSerializer):
         model = CLTSubmission
         fields = [
             'id', 'user', 'user_name', 'user_email',
-            'title', 'description', 'platform', 'completion_date', 'drive_link',
+            'title', 'description', 'platform', 'completion_date', 'duration', 'drive_link',
             'status', 'current_step', 'files',
             'reviewer_comments', 'reviewed_by', 'reviewer_name', 'reviewed_at',
             'created_at', 'updated_at', 'submitted_at'
@@ -60,7 +60,7 @@ class CLTSubmissionCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = CLTSubmission
         fields = [
-            'title', 'description', 'platform', 'completion_date', 'drive_link',
+            'title', 'description', 'platform', 'completion_date', 'duration', 'drive_link',
             'current_step', 'status'
         ]
     
@@ -80,7 +80,7 @@ class CLTSubmissionUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = CLTSubmission
         fields = [
-            'title', 'description', 'platform', 'completion_date',
+            'title', 'description', 'platform', 'completion_date', 'duration',
             'current_step', 'status'
         ]
     

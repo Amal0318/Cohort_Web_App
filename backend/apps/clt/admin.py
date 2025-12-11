@@ -10,7 +10,7 @@ class CLTFileInline(admin.TabularInline):
 
 @admin.register(CLTSubmission)
 class CLTSubmissionAdmin(admin.ModelAdmin):
-    list_display = ['title', 'user', 'platform', 'completion_date', 'status', 'current_step', 'created_at']
+    list_display = ['title', 'user', 'platform', 'completion_date', 'duration', 'status', 'current_step', 'created_at']
     list_filter = ['status', 'platform', 'created_at']
     search_fields = ['title', 'description', 'user__username', 'user__email']
     readonly_fields = ['created_at', 'updated_at', 'submitted_at']
@@ -18,7 +18,7 @@ class CLTSubmissionAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('Course Information', {
-            'fields': ('user', 'title', 'description', 'platform', 'completion_date')
+            'fields': ('user', 'title', 'description', 'platform', 'completion_date', 'duration')
         }),
         ('Certificate/Evidence', {
             'fields': ('drive_link',)

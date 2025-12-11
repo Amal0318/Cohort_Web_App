@@ -41,10 +41,58 @@
 
 /* Section Selector */
 .iipc-section-selector {
+  position: relative;
   display: flex;
   gap: 1rem;
-  margin-bottom: 2rem;
+  margin-bottom: 3rem;
   flex-wrap: wrap;
+  padding: 0.5rem;
+  border-radius: 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.iipc-section-selector>button {
+  position: relative;
+  border-radius: 1rem !important;
+  background: transparent !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding-bottom: 1.25rem !important;
+  overflow: visible;
+}
+
+.iipc-section-selector>button::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, #F7C948 0%, #E53935 100%);
+  border-radius: 3px;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+
+.iipc-section-selector>button:hover::after {
+  transform: scaleX(1);
+}
+
+.iipc-section-selector>button:hover {
+  background: rgba(247, 201, 72, 0.1) !important;
+}
+
+.iipc-section-selector>button[class*="primary"],
+.iipc-section-selector>button.button--primary {
+  background: linear-gradient(135deg, #F7C948 0%, #E53935 100%) !important;
+  color: #000000 !important;
+  box-shadow: 0 0 20px rgba(247, 201, 72, 0.6) !important;
+}
+
+.iipc-section-selector>button[class*="primary"]::after,
+.iipc-section-selector>button.button--primary::after {
+  transform: scaleX(1);
+  box-shadow: 0 0 8px rgba(247, 201, 72, 0.8);
 }
 
 /* Card */
@@ -667,6 +715,7 @@
     opacity: 0;
     transform: scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: scale(1);

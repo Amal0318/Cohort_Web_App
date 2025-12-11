@@ -22,6 +22,7 @@ class CLTSubmission(models.Model):
     description = models.TextField(help_text="Course description")
     platform = models.CharField(max_length=100, help_text="Learning platform (e.g., Coursera, Udemy)")
     completion_date = models.DateField(help_text="Date of course completion")
+    duration = models.IntegerField(null=True, blank=True, help_text="Total course duration in hours")
     
     # Certificate/Evidence (Step 2)
     drive_link = models.URLField(max_length=500, blank=True, null=True, help_text="Google Drive link to certificate/evidence")
