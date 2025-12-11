@@ -12,10 +12,9 @@ import './Login.css';
 const ROLES = [
     { id: 'student', label: 'Student', icon: GraduationCap, color: '#F7C948', description: 'Access student dashboard' },
     { id: 'mentor', label: 'Mentor', icon: Users, color: '#42A5F5', description: 'Guide and support students' },
-    { id: 'floorwing', label: 'Floor Wing', icon: Shield, color: '#66BB6A', description: 'Manage floor activities' },
     { id: 'admin', label: 'Admin', icon: Crown, color: '#E53935', description: 'Full system access' },
 ];
-   //vishnu
+//vishnu
 const Login = () => {
     const navigate = useNavigate();
     const { login } = useAuth();
@@ -91,9 +90,6 @@ const Login = () => {
                         break;
                     case 'mentor':
                         navigate('/mentor-dashboard');
-                        break;
-                    case 'floorwing':
-                        navigate('/floorwing-dashboard');
                         break;
                     case 'admin':
                         navigate('/admin-dashboard');
