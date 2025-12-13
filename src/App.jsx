@@ -30,6 +30,9 @@ import Notifications from './pages/admin/notifications/Notifications';
 import Roles from './pages/admin/roles/Roles';
 import Settings from './pages/admin/settings/Settings';
 import MentorDashboard from './pages/mentor/MentorDashboard';
+import MentorLayout from './pages/mentor/MentorLayout';
+import MentorHome from './pages/mentor/MentorHome';
+import SubmissionReview from './pages/mentor/SubmissionReview';
 import FloorWingDashboard from './pages/floorwing/FloorWingDashboard';
 import Login from './pages/Login';
 import './App.css';
@@ -223,8 +226,14 @@ function AppContent() {
             <Route path="settings" element={<Settings />} />
           </Route>
 
-          {/* Other Role Dashboards */}
-          <Route path="/mentor-dashboard" element={<ProtectedRoute><MentorDashboard /></ProtectedRoute>} />
+          {/* Mentor Routes with Layout */}
+          <Route path="/mentor-dashboard" element={<ProtectedRoute><MentorLayout /></ProtectedRoute>}>
+            <Route index element={<MentorHome />} />
+            <Route path="submissions" element={<SubmissionReview />} />
+            <Route path="old" element={<MentorDashboard />} />
+          </Route>
+
+          {/* FloorWing Dashboard */}
           <Route path="/floorwing-dashboard" element={<ProtectedRoute><FloorWingDashboard /></ProtectedRoute>} />
         </Routes>
       </main>
