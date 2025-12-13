@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import MentorHome from './MentorHome';
 import MentorDashboard from './MentorDashboard';
+import PillarReview from './PillarReview';
 import './MentorLayout.css';
 
 function MentorLayout() {
@@ -10,6 +11,7 @@ function MentorLayout() {
             <Routes>
                 <Route index element={<MentorHome />} />
                 <Route path="students" element={<MentorDashboard />} />
+                <Route path="pillar-review" element={<PillarReview />} />
                 <Route path="*" element={<Navigate to="/mentor-dashboard" replace />} />
             </Routes>
         </div>

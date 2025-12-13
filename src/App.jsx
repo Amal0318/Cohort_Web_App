@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 // eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, Lightbulb, Heart, Trophy, Linkedin, Code, Menu, X, LogOut, Users } from 'lucide-react';
+import { Home, Lightbulb, Heart, Trophy, Linkedin, Code, Menu, X, LogOut, Users, ClipboardCheck } from 'lucide-react';
 import { ThemeProvider } from './theme/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ThemeToggle from './components/ThemeToggle';
@@ -61,6 +61,7 @@ function Navigation() {
   const MENTOR_NAV_ITEMS = [
     { path: '/mentor-dashboard', label: 'Home', icon: Home },
     { path: '/mentor-dashboard/students', label: 'Student List', icon: Users },
+    { path: '/mentor-dashboard/pillar-review', label: 'Pillar Review', icon: ClipboardCheck },
   ];
 
   return (
@@ -160,7 +161,7 @@ function Navigation() {
             {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
-      </div>      {/* Mobile Menu */}
+      </div>      {/* Mobile Menu - Student */}
       <AnimatePresence>
         {isMenuOpen && showNavItems && (
           <motion.div
@@ -171,6 +172,34 @@ function Navigation() {
             transition={{ duration: 0.3 }}
           >
             {NAV_ITEMS.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.path;
+
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`nav-mobile-link ${isActive ? 'nav-mobile-link--active' : ''}`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Icon size={20} />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </motion.div>
+        )}
+
+        {/* Mobile Menu - Mentor */}
+        {isMenuOpen && showMentorNavItems && (
+          <motion.div
+            className="nav-mobile"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            {MENTOR_NAV_ITEMS.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
 
