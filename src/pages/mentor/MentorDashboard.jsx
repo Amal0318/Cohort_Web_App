@@ -1,13 +1,19 @@
 import React, { useState } from 'react';
 // eslint-disable-next-line no-unused-vars
-import { motion } from 'framer-motion';
-import { Users, CheckCircle, Clock, XCircle, Lightbulb, Heart, Trophy, Linkedin, Code, Search } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Users, CheckCircle, Clock, XCircle, Lightbulb, Heart, Trophy, Linkedin, Code, Search, MessageCircle, Send, X as CloseIcon } from 'lucide-react';
 import GlassCard from '../../components/GlassCard';
+import Button from '../../components/Button';
+import messageService from '../../services/messageService';
+import SubmissionReview from './SubmissionReview';
 import './MentorDashboard.css';
 
 function MentorDashboard() {
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [showChatModal, setShowChatModal] = useState(false);
+    const [message, setMessage] = useState('');
+    const [messageType, setMessageType] = useState('general');
 
     // Mock data for students assigned to this mentor
     const students = [
@@ -78,40 +84,6 @@ function MentorDashboard() {
         },
     ];
 
-    const categories = [
-        { id: 'clt', name: 'Creative Learning Track', icon: Lightbulb, color: '#F7C948' },
-        { id: 'sri', name: 'Social Responsibility Initiative', icon: Heart, color: '#E53935' },
-        { id: 'cfc', name: 'Career Future & Competency', icon: Trophy, color: '#FFC107' },
-        { id: 'iipc', name: 'Industry Institute Partnership Cell', icon: Linkedin, color: '#0A66C2' },
-        { id: 'scd', name: 'Skill & Career Development', icon: Code, color: '#FF5722' },
-    ];
-
-    const getStatusIcon = (status) => {
-        switch (status) {
-            case 'completed':
-                return <CheckCircle size={20} color="#4CAF50" />;
-            case 'pending':
-                return <Clock size={20} color="#FF9800" />;
-            case 'not-started':
-                return <XCircle size={20} color="#9E9E9E" />;
-            default:
-                return null;
-        }
-    };
-
-    const getStatusText = (status) => {
-        switch (status) {
-            case 'completed':
-                return 'Completed';
-            case 'pending':
-                return 'Pending Review';
-            case 'not-started':
-                return 'Not Started';
-            default:
-                return 'Unknown';
-        }
-    };
-
     const filteredStudents = students.filter(student =>
         student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         student.rollNo.toLowerCase().includes(searchQuery.toLowerCase())
@@ -126,7 +98,7 @@ function MentorDashboard() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
             >
-                <h1 className="mentor-title">Mentor Dashboard</h1>
+                <h1 className="mentor-title">Student List</h1>
                 <p className="mentor-subtitle">Monitor and review your assigned students</p>
             </motion.div>
 
@@ -194,69 +166,7 @@ function MentorDashboard() {
                     transition={{ duration: 0.5, delay: 0.3 }}
                 >
                     {selectedStudent ? (
-                        <div className="student-details">
-                            <GlassCard>
-                                <div className="details-header">
-                                    <div>
-                                        <h2 className="details-title">{selectedStudent.name}</h2>
-                                        <p className="details-subtitle">{selectedStudent.rollNo} • {selectedStudent.email}</p>
-                                    </div>
-                                </div>
-                            </GlassCard>
-
-                            <div className="submissions-grid">
-                                {categories.map((category) => {
-                                    const submission = selectedStudent.submissions[category.id];
-                                    const Icon = category.icon;
-                                    return (
-                                        <motion.div
-                                            key={category.id}
-                                            initial={{ opacity: 0, y: 20 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ duration: 0.3 }}
-                                        >
-                                            <GlassCard>
-                                                <div className="submission-card">
-                                                    <div className="submission-card-header">
-                                                        <div className="category-icon" style={{ backgroundColor: `${category.color}20` }}>
-                                                            <Icon size={24} color={category.color} />
-                                                        </div>
-                                                        <div className="category-info">
-                                                            <h3 className="category-name">{category.name}</h3>
-                                                            <p className="category-id">{category.id.toUpperCase()}</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="submission-card-body">
-                                                        <div className="submission-status">
-                                                            {getStatusIcon(submission.status)}
-                                                            <span className={`status-text status-${submission.status}`}>
-                                                                {getStatusText(submission.status)}
-                                                            </span>
-                                                        </div>
-                                                        <div className="submission-stats">
-                                                            <div className="stat-item">
-                                                                <span className="stat-label">Submissions:</span>
-                                                                <span className="stat-value">{submission.count}</span>
-                                                            </div>
-                                                            <div className="stat-item">
-                                                                <span className="stat-label">Last Activity:</span>
-                                                                <span className="stat-value">{submission.lastSubmission}</span>
-                                                            </div>
-                                                        </div>
-                                                        {submission.status === 'pending' && (
-                                                            <button className="review-btn-small">Review Now</button>
-                                                        )}
-                                                        {submission.status === 'completed' && (
-                                                            <button className="view-btn-small">View Details</button>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </GlassCard>
-                                        </motion.div>
-                                    );
-                                })}
-                            </div>
-                        </div>
+                        <SubmissionReview selectedStudent={selectedStudent} />
                     ) : (
                         <GlassCard>
                             <div className="no-selection">
@@ -268,6 +178,124 @@ function MentorDashboard() {
                     )}
                 </motion.div>
             </div>
+
+            {/* Chat Modal */}
+            <AnimatePresence>
+                {showChatModal && selectedStudent && (
+                    <motion.div
+                        className="modal-overlay"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setShowChatModal(false)}
+                    >
+                        <motion.div
+                            className="chat-modal"
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="chat-modal-header">
+                                <div>
+                                    <h3>Send Message</h3>
+                                    <p>To: {selectedStudent.name}</p>
+                                </div>
+                                <button
+                                    className="close-button"
+                                    onClick={() => setShowChatModal(false)}
+                                >
+                                    <CloseIcon size={20} />
+                                </button>
+                            </div>
+
+                            <div className="chat-modal-body">
+                                <div className="message-type-selector">
+                                    <label className="type-label">Message Type:</label>
+                                    <div className="type-options">
+                                        <label className={`type-option ${messageType === 'general' ? 'active' : ''}`}>
+                                            <input
+                                                type="radio"
+                                                name="messageType"
+                                                value="general"
+                                                checked={messageType === 'general'}
+                                                onChange={(e) => setMessageType(e.target.value)}
+                                            />
+                                            <span>General</span>
+                                        </label>
+                                        <label className={`type-option ${messageType === 'completion' ? 'active' : ''}`}>
+                                            <input
+                                                type="radio"
+                                                name="messageType"
+                                                value="completion"
+                                                checked={messageType === 'completion'}
+                                                onChange={(e) => setMessageType(e.target.value)}
+                                            />
+                                            <span>Completion</span>
+                                        </label>
+                                        <label className={`type-option ${messageType === 'pending' ? 'active' : ''}`}>
+                                            <input
+                                                type="radio"
+                                                name="messageType"
+                                                value="pending"
+                                                checked={messageType === 'pending'}
+                                                onChange={(e) => setMessageType(e.target.value)}
+                                            />
+                                            <span>Pending Review</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div className="message-input-container">
+                                    <label className="input-label">Message:</label>
+                                    <textarea
+                                        className="message-textarea"
+                                        placeholder="Type your message here..."
+                                        value={message}
+                                        onChange={(e) => setMessage(e.target.value)}
+                                        rows={6}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="chat-modal-footer">
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => setShowChatModal(false)}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    variant="primary"
+                                    onClick={async () => {
+                                        if (message.trim()) {
+                                            try {
+                                                await messageService.sendMessage(
+                                                    selectedStudent.id,
+                                                    message,
+                                                    messageType
+                                                );
+                                                // Show success feedback
+                                                alert('Message sent successfully!');
+                                                setMessage('');
+                                                setMessageType('general');
+                                                setShowChatModal(false);
+                                            } catch (error) {
+                                                console.error('Failed to send message:', error);
+                                                alert('Failed to send message. Please try again.');
+                                            }
+                                        }
+                                    }}
+                                    disabled={!message.trim()}
+                                >
+                                    <Send size={16} />
+                                    <span>Send</span>
+                                </Button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
