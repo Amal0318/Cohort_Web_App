@@ -140,11 +140,6 @@ img {
   max-width: 100%;
 }
 
-/* App Container */
-#root {
-  min-height: 100vh;
-}
-
 /* Scrollbar Styles */
 ::-webkit-scrollbar {
   width: 8px;

@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
-// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import { BookOpen, Users, TrendingUp, Award, Calendar, Bell, User, Mail, Phone, Hash } from 'lucide-react';
 import GlassCard from '../../components/GlassCard';
 import { useAuth } from '../../context/AuthContext';
-import './MentorHome.css';
+import './MentorHome_new.css';
 
 function MentorHome() {
     const { user } = useAuth();
     const [showProfile, setShowProfile] = useState(false);
 
-    // Mock mentor data - Replace with actual API calls
+    // Mock mentor data
     const mentorInfo = {
         name: user?.name || 'Dr. Sarah Johnson',
         email: user?.email || 'mentor@test.com',
@@ -19,7 +18,6 @@ function MentorHome() {
         studentsHandling: 5,
     };
 
-    // Mock data for mentor overview
     const stats = {
         totalStudents: 5,
         activeSubmissions: 8,
@@ -42,40 +40,35 @@ function MentorHome() {
     ];
 
     return (
-        <div className="mentor-home">
+        <div className="mentor-home-container">
             {/* Profile Modal */}
             {showProfile && (
-                <motion.div
-                    className="mentor-profile-modal-overlay"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    onClick={() => setShowProfile(false)}
-                >
+                <div className="profile-modal-overlay" onClick={() => setShowProfile(false)}>
                     <motion.div
                         initial={{ scale: 0.8, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         onClick={(e) => e.stopPropagation()}
                     >
                         <GlassCard>
-                            <div className="mentor-profile-modal-content">
-                                <div className="mentor-profile-avatar">
+                            <div className="profile-modal-content">
+                                <div className="profile-avatar">
                                     <User size={48} />
                                 </div>
                                 <h2>{mentorInfo.name}</h2>
-                                <div className="mentor-profile-details">
-                                    <div className="mentor-profile-detail-item">
+                                <div className="profile-details">
+                                    <div className="profile-detail-item">
                                         <Mail size={20} />
                                         <span>{mentorInfo.email}</span>
                                     </div>
-                                    <div className="mentor-profile-detail-item">
+                                    <div className="profile-detail-item">
                                         <Phone size={20} />
                                         <span>{mentorInfo.phone}</span>
                                     </div>
-                                    <div className="mentor-profile-detail-item">
+                                    <div className="profile-detail-item">
                                         <Hash size={20} />
                                         <span>Mentor ID: {mentorInfo.mentorId}</span>
                                     </div>
-                                    <div className="mentor-profile-detail-item">
+                                    <div className="profile-detail-item">
                                         <Users size={20} />
                                         <span>Students Handling: {mentorInfo.studentsHandling}</span>
                                     </div>
@@ -83,117 +76,84 @@ function MentorHome() {
                             </div>
                         </GlassCard>
                     </motion.div>
-                </motion.div>
+                </div>
             )}
 
-            {/* Header with Profile Icon */}
-            <motion.div
-                className="mentor-home-header"
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-            >
-                <div>
-                    <h1 className="mentor-home-title">Welcome Back, {mentorInfo.name.split(' ')[0]}!</h1>
-                    <p className="mentor-home-subtitle">Here's an overview of your mentoring activities</p>
+            {/* Header */}
+            <div className="mentor-home-header">
+                <div className="home-welcome">
+                    <h1>Welcome back, {mentorInfo.name.split(' ')[0]}!</h1>
+                    <p>Track your progress and stay updated with your learning journey</p>
                 </div>
-                <button className="mentor-profile-icon-btn" onClick={() => setShowProfile(true)}>
+                <button className="profile-icon-btn" onClick={() => setShowProfile(true)}>
                     <User size={24} />
                 </button>
-            </motion.div>
-
-            {/* Stats Grid */}
-            <div className="mentor-stats-grid">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                >
-                    <GlassCard hoverable>
-                        <div className="mentor-stat-card">
-                            <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-                                <Users size={28} />
-                            </div>
-                            <div className="stat-info">
-                                <p className="stat-label">Total Students</p>
-                                <h3 className="stat-value">{stats.totalStudents}</h3>
-                            </div>
-                        </div>
-                    </GlassCard>
-                </motion.div>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                >
-                    <GlassCard hoverable>
-                        <div className="mentor-stat-card">
-                            <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' }}>
-                                <TrendingUp size={28} />
-                            </div>
-                            <div className="stat-info">
-                                <p className="stat-label">Active Submissions</p>
-                                <h3 className="stat-value">{stats.activeSubmissions}</h3>
-                            </div>
-                        </div>
-                    </GlassCard>
-                </motion.div>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                >
-                    <GlassCard hoverable>
-                        <div className="mentor-stat-card">
-                            <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' }}>
-                                <Award size={28} />
-                            </div>
-                            <div className="stat-info">
-                                <p className="stat-label">Completed Reviews</p>
-                                <h3 className="stat-value">{stats.completedReviews}</h3>
-                            </div>
-                        </div>
-                    </GlassCard>
-                </motion.div>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 }}
-                >
-                    <GlassCard hoverable>
-                        <div className="mentor-stat-card">
-                            <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' }}>
-                                <BookOpen size={28} />
-                            </div>
-                            <div className="stat-info">
-                                <p className="stat-label">Pending Reviews</p>
-                                <h3 className="stat-value">{stats.pendingReviews}</h3>
-                            </div>
-                        </div>
-                    </GlassCard>
-                </motion.div>
             </div>
 
-            {/* Main Content */}
-            <div className="mentor-home-content">
-                {/* Recent Activity */}
-                <motion.div
-                    className="activity-section"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.5 }}
-                >
+            {/* Stats Grid - Full Width Row */}
+            <div className="mentor-stats-grid">
+                <GlassCard hoverable>
+                    <div className="mentor-stat-card">
+                        <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+                            <Users size={28} />
+                        </div>
+                        <div className="stat-info">
+                            <p className="stat-label">Total Students</p>
+                            <h3 className="stat-value">{stats.totalStudents}</h3>
+                        </div>
+                    </div>
+                </GlassCard>
+
+                <GlassCard hoverable>
+                    <div className="mentor-stat-card">
+                        <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' }}>
+                            <TrendingUp size={28} />
+                        </div>
+                        <div className="stat-info">
+                            <p className="stat-label">Active Submissions</p>
+                            <h3 className="stat-value">{stats.activeSubmissions}</h3>
+                        </div>
+                    </div>
+                </GlassCard>
+
+                <GlassCard hoverable>
+                    <div className="mentor-stat-card">
+                        <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' }}>
+                            <Award size={28} />
+                        </div>
+                        <div className="stat-info">
+                            <p className="stat-label">Completed Reviews</p>
+                            <h3 className="stat-value">{stats.completedReviews}</h3>
+                        </div>
+                    </div>
+                </GlassCard>
+
+                <GlassCard hoverable>
+                    <div className="mentor-stat-card">
+                        <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' }}>
+                            <BookOpen size={28} />
+                        </div>
+                        <div className="stat-info">
+                            <p className="stat-label">Pending Reviews</p>
+                            <h3 className="stat-value">{stats.pendingReviews}</h3>
+                        </div>
+                    </div>
+                </GlassCard>
+            </div>
+
+            {/* Dashboard Layout */}
+            <div className="mentor-home-dashboard">
+                {/* Left Column */}
+                <div className="mentor-home-left-column">
+                    {/* Recent Activity */}
                     <GlassCard>
+                        <div className="section-header">
+                            <h2 className="section-title">
+                                <Bell size={24} />
+                                Recent Activity
+                            </h2>
+                        </div>
                         <div className="activity-list">
-                            <div className="section-header">
-                                <h2 className="section-title">
-                                    <Bell size={24} />
-                                    Recent Activity
-                                </h2>
-                            </div>
                             {recentActivity.map((activity) => (
                                 <div key={activity.id} className="activity-item">
                                     <div className={`activity-indicator ${activity.type}`}></div>
@@ -206,23 +166,19 @@ function MentorHome() {
                             ))}
                         </div>
                     </GlassCard>
-                </motion.div>
+                </div>
 
-                {/* Upcoming Deadlines */}
-                <motion.div
-                    className="deadlines-section"
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.5 }}
-                >
+                {/* Right Column */}
+                <div className="mentor-home-right-column">
+                    {/* Upcoming Deadlines */}
                     <GlassCard>
+                        <div className="section-header">
+                            <h2 className="section-title">
+                                <Calendar size={24} />
+                                Upcoming Deadlines
+                            </h2>
+                        </div>
                         <div className="deadlines-list">
-                            <div className="section-header">
-                                <h2 className="section-title">
-                                    <Calendar size={24} />
-                                    Upcoming Deadlines
-                                </h2>
-                            </div>
                             {upcomingDeadlines.map((deadline) => (
                                 <div key={deadline.id} className="deadline-item">
                                     <div className={`deadline-priority ${deadline.priority}`}></div>
@@ -234,7 +190,7 @@ function MentorHome() {
                             ))}
                         </div>
                     </GlassCard>
-                </motion.div>
+                </div>
             </div>
         </div>
     );
