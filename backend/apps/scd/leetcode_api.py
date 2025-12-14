@@ -62,6 +62,19 @@ class LeetCodeAPI:
     }
     """
     
+    # GraphQL query for user calendar/streak data
+    USER_CALENDAR_QUERY = """
+    query getUserCalendar($username: String!, $year: Int!) {
+        matchedUser(username: $username) {
+            userCalendar(year: $year) {
+                streak
+                totalActiveDays
+                submissionCalendar
+            }
+        }
+    }
+    """
+    
     @staticmethod
     def fetch_user_profile(username: str) -> Optional[Dict]:
         """
@@ -217,4 +230,85 @@ class LeetCodeAPI:
             
         except Exception as e:
             print(f"Error fetching contest info for {username}: {str(e)}")
+            return None
+    
+    @staticmethod
+    def fetch_calendar_data(username: str) -> Optional[Dict]:
+        """
+        Fetch user calendar data including streak and monthly submissions
+        
+        Args:
+            username: LeetCode username
+            
+        Returns:
+            Dictionary with streak and calendar data or None if failed
+        """
+        try:
+            from datetime import datetime
+            current_year = datetime.now().year
+            
+            response = requests.post(
+                LeetCodeAPI.GRAPHQL_URL,
+                json={
+                    'query': LeetCodeAPI.USER_CALENDAR_QUERY,
+                    'variables': {'username': username, 'year': current_year}
+                },
+                headers={'Content-Type': 'application/json'},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                matched_user = data.get('data', {}).get('matchedUser')
+                
+                if matched_user and matched_user.get('userCalendar'):
+                    calendar_data = matched_user['userCalendar']
+                    submission_calendar_str = calendar_data.get('submissionCalendar', '{}')
+                    
+                    # Parse submission calendar JSON string
+                    import json
+                    try:
+                        submission_calendar = json.loads(submission_calendar_str) if isinstance(submission_calendar_str, str) else submission_calendar_str
+                    except:
+                        submission_calendar = {}
+                    
+                    # Convert to proper format and filter last 12 months
+                    from datetime import datetime, timedelta
+                    now = datetime.now()
+                    twelve_months_ago = now - timedelta(days=365)
+                    twelve_months_ago_timestamp = int(twelve_months_ago.timestamp())
+                    
+                    # Filter and convert calendar data
+                    filtered_calendar = {}
+                    for timestamp_str, count in submission_calendar.items():
+                        try:
+                            timestamp = int(timestamp_str)
+                            if timestamp >= twelve_months_ago_timestamp:
+                                # Store as string key for JSON compatibility
+                                filtered_calendar[str(timestamp)] = int(count)
+                        except (ValueError, TypeError):
+                            continue
+                    
+                    # Calculate current month's problems
+                    current_month_start = datetime(now.year, now.month, 1).timestamp()
+                    next_month = now.month + 1 if now.month < 12 else 1
+                    next_month_year = now.year if now.month < 12 else now.year + 1
+                    current_month_end = datetime(next_month_year, next_month, 1).timestamp()
+                    
+                    monthly_problems = sum(
+                        int(count) for timestamp_str, count in filtered_calendar.items()
+                        if current_month_start <= int(timestamp_str) < current_month_end
+                    )
+                    
+                    return {
+                        'streak': calendar_data.get('streak', 0),
+                        'total_active_days': calendar_data.get('totalActiveDays', 0),
+                        'monthly_problems': monthly_problems,
+                        'submission_calendar': filtered_calendar
+                    }
+            
+            return None
+            
+        except Exception as e:
+            print(f"Error fetching calendar data for {username}: {str(e)}")
             return None

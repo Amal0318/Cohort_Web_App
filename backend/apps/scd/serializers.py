@@ -43,7 +43,8 @@ class LeetCodeProfileSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'user', 'leetcode_username',
             'total_solved', 'easy_solved', 'medium_solved', 'hard_solved',
-            'ranking', 'contest_rating', 'streak',
+            'ranking', 'contest_rating', 'streak', 'monthly_problems_count', 'total_active_days',
+            'submission_calendar',
             'screenshot_url', 'status', 'status_display',
             'last_synced', 'created_at', 'updated_at',
             'submitted_at', 'reviewed_at', 'reviewer', 'review_comments',

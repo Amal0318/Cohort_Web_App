@@ -28,6 +28,9 @@ class LeetCodeProfile(models.Model):
     ranking = models.IntegerField(null=True, blank=True)
     contest_rating = models.IntegerField(null=True, blank=True)
     streak = models.IntegerField(default=0)
+    monthly_problems_count = models.IntegerField(default=0, help_text="Problems solved this month")
+    total_active_days = models.IntegerField(default=0)
+    submission_calendar = models.JSONField(default=dict, blank=True, help_text="Calendar data from LeetCode")
     
     # Submission tracking
     screenshot_url = models.URLField(max_length=500, blank=True)

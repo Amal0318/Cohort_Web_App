@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 // eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Video, Briefcase, Brain, Upload, CheckCircle, ExternalLink, Loader2, AlertCircle } from 'lucide-react';
+import { Trophy, Video, Briefcase, Brain, Upload, CheckCircle, ExternalLink, Loader2, AlertCircle, Plus } from 'lucide-react';
 import GlassCard from '../../components/GlassCard';
 import Button from '../../components/Button';
 import Input from '../../components/Input';
+import HackathonRegistrationModal from '../../components/HackathonRegistrationModal';
 import * as cfcService from '../../services/cfc';
 import './CFC.css';
 
@@ -20,6 +21,10 @@ export const CFC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  
+  // Registration modal state
+  const [showRegistrationModal, setShowRegistrationModal] = useState(false);
+  const [registeredHackathons, setRegisteredHackathons] = useState([]);
 
   // Hackathon state
   const [hackathonName, setHackathonName] = useState('');
@@ -62,6 +67,31 @@ export const CFC = () => {
   });
   const [repoValidation, setRepoValidation] = useState(null);
   const [checkingRepo, setCheckingRepo] = useState(false);
+
+  // Load registered hackathons on mount
+  useEffect(() => {
+    fetchRegisteredHackathons();
+  }, []);
+
+  const fetchRegisteredHackathons = async () => {
+    try {
+      const data = await cfcService.getHackathonRegistrations();
+      setRegisteredHackathons(data);
+    } catch (err) {
+      console.error('Failed to fetch registered hackathons:', err);
+    }
+  };
+
+  const handleRegisterHackathon = async (formData) => {
+    try {
+      await cfcService.createHackathonRegistration(formData);
+      setSuccess('Hackathon registered successfully! We\'ll remind you on your home page.');
+      setShowRegistrationModal(false);
+      fetchRegisteredHackathons();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to register hackathon');
+    }
+  };
 
   // Clear messages after 5 seconds
   useEffect(() => {
@@ -438,6 +468,68 @@ export const CFC = () => {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
           >
+            {/* Register Hackathon Button */}
+            <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
+              <Button
+                variant="secondary"
+                onClick={() => setShowRegistrationModal(true)}
+              >
+                <Plus size={20} />
+                Register New Hackathon
+              </Button>
+            </div>
+
+            {/* Show Registered Hackathons */}
+            {registeredHackathons.length > 0 && (
+              <GlassCard variant="medium" className="cfc-content-card" style={{ marginBottom: '1.5rem' }}>
+                <div className="cfc-section-header">
+                  <Trophy size={24} className="cfc-section-icon" />
+                  <div>
+                    <h3 className="cfc-section-title">Your Registered Hackathons</h3>
+                    <p className="cfc-section-subtitle">
+                      {registeredHackathons.filter(h => h.is_upcoming).length} upcoming
+                    </p>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+                  {registeredHackathons.slice(0, 3).map((hackathon) => (
+                    <div 
+                      key={hackathon.id} 
+                      style={{
+                        padding: '1rem',
+                        background: 'var(--background)',
+                        borderRadius: '8px',
+                        border: '1px solid var(--border-color)'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                        <div>
+                          <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-primary)' }}>
+                            {hackathon.hackathon_name}
+                          </h4>
+                          <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                            {new Date(hackathon.participation_date).toLocaleDateString()} • {hackathon.mode}
+                          </p>
+                        </div>
+                        <span style={{
+                          padding: '0.25rem 0.75rem',
+                          background: hackathon.days_until_event <= 3 ? 'rgba(255, 71, 87, 0.1)' : 'rgba(26, 188, 156, 0.1)',
+                          color: hackathon.days_until_event <= 3 ? '#ff4757' : '#16a085',
+                          borderRadius: '6px',
+                          fontSize: '0.85rem',
+                          fontWeight: '600'
+                        }}>
+                          {hackathon.days_until_event === 0 ? 'Today!' : 
+                           hackathon.days_until_event === 1 ? 'Tomorrow' : 
+                           `${hackathon.days_until_event} days`}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </GlassCard>
+            )}
+
             <GlassCard variant="medium" className="cfc-content-card">
               <div className="cfc-section-header">
                 <Trophy size={32} className="cfc-section-icon" />
@@ -1114,6 +1206,13 @@ export const CFC = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Hackathon Registration Modal */}
+      <HackathonRegistrationModal
+        isOpen={showRegistrationModal}
+        onClose={() => setShowRegistrationModal(false)}
+        onRegister={handleRegisterHackathon}
+      />
     </div>
   );
 };

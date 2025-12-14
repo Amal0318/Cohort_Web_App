@@ -82,6 +82,9 @@ class LeetCodeProfileViewSet(viewsets.ModelViewSet):
         # Fetch contest info
         contest_info = LeetCodeAPI.fetch_contest_info(username)
         
+        # Fetch calendar data (streak and monthly problems)
+        calendar_data = LeetCodeAPI.fetch_calendar_data(username)
+        
         try:
             with transaction.atomic():
                 # Get or create profile
@@ -95,6 +98,10 @@ class LeetCodeProfileViewSet(viewsets.ModelViewSet):
                         'hard_solved': profile_data['hard_solved'],
                         'ranking': profile_data['ranking'],
                         'contest_rating': contest_info['rating'] if contest_info else None,
+                        'streak': calendar_data['streak'] if calendar_data else 0,
+                        'monthly_problems_count': calendar_data['monthly_problems'] if calendar_data else 0,
+                        'total_active_days': calendar_data['total_active_days'] if calendar_data else 0,
+                        'submission_calendar': calendar_data['submission_calendar'] if calendar_data else {},
                     }
                 )
                 
@@ -107,7 +114,38 @@ class LeetCodeProfileViewSet(viewsets.ModelViewSet):
                     profile.ranking = profile_data['ranking']
                     if contest_info:
                         profile.contest_rating = contest_info['rating']
+                    if calendar_data:
+                        profile.streak = calendar_data['streak']
+                        profile.monthly_problems_count = calendar_data['monthly_problems']
+                        profile.total_active_days = calendar_data['total_active_days']
+                        profile.submission_calendar = calendar_data['submission_calendar']
                     profile.save()
+                
+                # Check if monthly target is met (minimum 10 problems)
+                monthly_target_met = (calendar_data and calendar_data['monthly_problems'] >= 10) if calendar_data else False
+                
+                # If target not met, create notification for mentor
+                if not monthly_target_met and hasattr(request.user, 'student_profile') and request.user.student_profile.mentor:
+                    from apps.dashboard.models import Notification
+                    from datetime import datetime
+                    
+                    # Check if notification already exists for this month
+                    current_month = datetime.now().strftime('%Y-%m')
+                    existing_notif = Notification.objects.filter(
+                        user=request.user.student_profile.mentor,
+                        message__contains=f"monthly target ({current_month})",
+                        created_at__month=datetime.now().month,
+                        created_at__year=datetime.now().year
+                    ).exists()
+                    
+                    if not existing_notif:
+                        problems_count = calendar_data['monthly_problems'] if calendar_data else 0
+                        student_name = request.user.get_full_name() or request.user.username
+                        Notification.objects.create(
+                            user=request.user.student_profile.mentor,
+                            message=f"{student_name} has only solved {problems_count}/10 problems this month on LeetCode (monthly target ({current_month}))",
+                            notification_type='warning'
+                        )
                 
                 # Create progress snapshot
                 ProgressSnapshot.objects.create(

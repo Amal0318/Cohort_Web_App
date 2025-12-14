@@ -4,6 +4,60 @@ from django.core.validators import URLValidator
 from django.utils import timezone
 
 
+class HackathonRegistration(models.Model):
+    """Track hackathons that students plan to participate in"""
+    
+    MODE_CHOICES = [
+        ('online', 'Online'),
+        ('offline', 'Offline'),
+        ('hybrid', 'Hybrid'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='registered_hackathons')
+    hackathon_name = models.CharField(max_length=255, help_text="Name of the hackathon")
+    mode = models.CharField(max_length=20, choices=MODE_CHOICES, help_text="Participation mode")
+    registration_date = models.DateField(help_text="Date when you registered")
+    participation_date = models.DateField(help_text="Scheduled participation date")
+    hackathon_url = models.URLField(max_length=500, blank=True, null=True, 
+                                    help_text="Hackathon website or registration link")
+    notes = models.TextField(blank=True, null=True, help_text="Personal notes or preparation goals")
+    
+    # Tracking
+    is_completed = models.BooleanField(default=False, help_text="Mark as completed after participation")
+    reminder_sent = models.BooleanField(default=False, help_text="Track if reminder was shown")
+    
+    # Link to submission (if created later)
+    submission = models.OneToOneField('HackathonSubmission', on_delete=models.SET_NULL, 
+                                     null=True, blank=True, related_name='registration')
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-participation_date', '-created_at']
+        indexes = [
+            models.Index(fields=['user', 'is_completed']),
+            models.Index(fields=['participation_date']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.hackathon_name} (Registered)"
+    
+    @property
+    def days_until_event(self):
+        """Calculate days remaining until participation date"""
+        from datetime import date
+        delta = self.participation_date - date.today()
+        return delta.days
+    
+    @property
+    def is_upcoming(self):
+        """Check if hackathon is upcoming (not completed and date is in future)"""
+        from datetime import date
+        return not self.is_completed and self.participation_date >= date.today()
+
+
 class HackathonSubmission(models.Model):
     """Hackathon participation and achievement tracking"""
     

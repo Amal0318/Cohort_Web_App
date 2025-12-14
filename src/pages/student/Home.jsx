@@ -11,6 +11,7 @@ import GlassCard from '../../components/GlassCard';
 import Button from '../../components/Button';
 import { useAuth } from '../../context/AuthContext';
 import dashboardService from '../../services/dashboard';
+import { getUpcomingHackathons } from '../../services/cfc';
 import './Home.css';
 
 const PILLARS = [
@@ -63,6 +64,8 @@ export const HomePage = () => {
   const [error, setError] = useState(null);
   const [dashboardData, setDashboardData] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [upcomingHackathons, setUpcomingHackathons] = useState([]);
+  const [showHackathonModal, setShowHackathonModal] = useState(false);
 
   useEffect(() => {
     document.title = 'Dashboard | Cohort Web';
@@ -76,6 +79,7 @@ export const HomePage = () => {
     }
     
     fetchDashboardData();
+    fetchHackathons();
 
     // Set up auto-refresh every 30 seconds
     const refreshInterval = setInterval(() => {
@@ -87,6 +91,15 @@ export const HomePage = () => {
       clearInterval(refreshInterval);
     };
   }, []);
+
+  const fetchHackathons = async () => {
+    try {
+      const data = await getUpcomingHackathons();
+      setUpcomingHackathons(data);
+    } catch (err) {
+      console.error('Failed to fetch hackathons:', err);
+    }
+  };
 
   const fetchDashboardData = async (silent = false) => {
     if (!silent) {
@@ -252,6 +265,124 @@ export const HomePage = () => {
         </motion.div>
       )}
 
+      {/* Hackathon Notifications Modal */}
+      {showHackathonModal && (
+        <motion.div
+          className="profile-modal-overlay"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          onClick={() => setShowHackathonModal(false)}
+        >
+          <motion.div
+            className="profile-modal"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '600px' }}
+          >
+            <GlassCard>
+              <div className="profile-modal-content">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                  <Trophy size={32} style={{ color: '#FFC107' }} />
+                  <h2 style={{ margin: 0 }}>Upcoming Hackathons</h2>
+                </div>
+                
+                {upcomingHackathons.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {upcomingHackathons.map((hackathon) => {
+                      const daysLeft = hackathon.days_until_event;
+                      const isUrgent = daysLeft <= 3;
+                      const motivationMsg = daysLeft === 0 ? "It's TODAY! Give it your best shot! 🚀" :
+                                           daysLeft === 1 ? "Tomorrow's the day! Get ready! 🔥" :
+                                           daysLeft <= 3 ? "Just a few days left! Time to shine! ✨" :
+                                           "Start preparing now! You got this! 🎯";
+                      
+                      return (
+                        <div key={hackathon.id} style={{
+                          padding: '1rem',
+                          background: 'rgba(255, 255, 255, 0.03)',
+                          borderRadius: '12px',
+                          border: `2px solid ${isUrgent ? '#ff4757' : 'rgba(255, 193, 7, 0.3)'}`,
+                          transition: 'all 0.3s ease'
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.75rem' }}>
+                            <strong style={{ fontSize: '1.1rem', color: 'var(--text-primary)' }}>
+                              {hackathon.hackathon_name}
+                            </strong>
+                            <span style={{
+                              padding: '0.3rem 0.75rem',
+                              background: isUrgent ? 'rgba(255, 71, 87, 0.15)' : 'rgba(255, 193, 7, 0.15)',
+                              color: isUrgent ? '#ff4757' : '#FFC107',
+                              borderRadius: '6px',
+                              fontSize: '0.85rem',
+                              fontWeight: '700',
+                              whiteSpace: 'nowrap',
+                              marginLeft: '1rem'
+                            }}>
+                              {daysLeft === 0 ? 'Today!' : daysLeft === 1 ? 'Tomorrow' : `${daysLeft} days`}
+                            </span>
+                          </div>
+                          <p style={{ margin: '0.5rem 0', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
+                            <Calendar size={16} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} />
+                            {new Date(hackathon.participation_date).toLocaleDateString('en-US', { 
+                              weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
+                            })} • {hackathon.mode}
+                          </p>
+                          <p style={{ 
+                            margin: '0.75rem 0 0 0', 
+                            fontSize: '0.95rem', 
+                            color: 'var(--text-primary)',
+                            fontWeight: '500',
+                            padding: '0.5rem',
+                            background: isUrgent ? 'rgba(255, 71, 87, 0.05)' : 'rgba(255, 193, 7, 0.05)',
+                            borderRadius: '6px'
+                          }}>
+                            {motivationMsg}
+                          </p>
+                          {hackathon.hackathon_url && (
+                            <a 
+                              href={hackathon.hackathon_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              style={{
+                                display: 'inline-block',
+                                marginTop: '0.75rem',
+                                color: '#FFC107',
+                                textDecoration: 'none',
+                                fontSize: '0.9rem',
+                                fontWeight: '500'
+                              }}
+                            >
+                              View Details →
+                            </a>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div style={{ 
+                    textAlign: 'center', 
+                    padding: '2rem',
+                    color: 'var(--text-secondary)'
+                  }}>
+                    <Trophy size={48} style={{ color: 'var(--border-color)', marginBottom: '1rem' }} />
+                    <p>No upcoming hackathons registered yet.</p>
+                    <p style={{ fontSize: '0.9rem', marginTop: '0.5rem' }}>Go to CFC page to register for hackathons!</p>
+                  </div>
+                )}
+                
+                <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+                  <Button onClick={() => setShowHackathonModal(false)}>
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </GlassCard>
+          </motion.div>
+        </motion.div>
+      )}
+
       {/* Header with Profile */}
       <div className="home-header">
         <motion.div
@@ -268,14 +399,57 @@ export const HomePage = () => {
           )}
         </motion.div>
 
-        <motion.button
-          className="profile-icon-btn"
-          onClick={() => setShowProfile(true)}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <User size={24} />
-        </motion.button>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          {/* Hackathon Notifications Button */}
+          <motion.button
+            className="hackathon-notif-btn"
+            onClick={() => setShowHackathonModal(true)}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.6rem 1rem',
+              background: 'rgba(255, 193, 7, 0.1)',
+              border: '1px solid rgba(255, 193, 7, 0.3)',
+              borderRadius: '12px',
+              cursor: 'pointer',
+              position: 'relative'
+            }}
+          >
+            <Trophy size={20} style={{ color: '#FFC107' }} />
+            <span style={{ color: 'var(--text-primary)', fontWeight: '500', fontSize: '0.9rem' }}>Hackathons</span>
+            {upcomingHackathons.length > 0 && (
+              <span style={{
+                position: 'absolute',
+                top: '-6px',
+                right: '-6px',
+                background: '#ff4757',
+                color: 'white',
+                borderRadius: '50%',
+                width: '20px',
+                height: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.7rem',
+                fontWeight: 'bold'
+              }}>
+                {upcomingHackathons.length}
+              </span>
+            )}
+          </motion.button>
+
+          <motion.button
+            className="profile-icon-btn"
+            onClick={() => setShowProfile(true)}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <User size={24} />
+          </motion.button>
+        </div>
       </div>
 
       {/* Main Dashboard Content */}
@@ -372,6 +546,7 @@ export const HomePage = () => {
               <div className="notifications-card">
                 <h2><Bell size={20} /> Notifications</h2>
                 <div className="notifications-list">
+                  {/* Regular Notifications */}
                   {notifications.length > 0 ? (
                     notifications.map((notif) => (
                       <div key={notif.id} className={`notification-item ${notif.read ? 'read' : 'unread'}`}>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Code, Flame, Trophy, TrendingUp, Target, Award, 
-  CheckCircle, Clock, XCircle, Upload, RefreshCw,
+  CheckCircle, Clock, XCircle, RefreshCw,
   Activity, Zap
 } from 'lucide-react';
 import GlassCard from '../../components/GlassCard';
@@ -10,17 +10,14 @@ import Button from '../../components/Button';
 import Input from '../../components/Input';
 import {
   syncLeetCodeProfile,
-  getLeetCodeProfiles,
-  submitProfileForReview
+  getLeetCodeProfiles
 } from '../../services/scd';
 import { getUserProfile } from '../../services/profile';
 import './SCD.css';
 
 export const SCD = () => {
   const [leetcodeUsername, setLeetcodeUsername] = useState('');
-  const [screenshotUrl, setScreenshotUrl] = useState('');
   const [profileData, setProfileData] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -33,7 +30,6 @@ export const SCD = () => {
 
   const loadProfileAndAutoSync = async () => {
     try {
-      setLoading(true);
       
       // Get user profile to check for saved leetcode_id
       const userProfile = await getUserProfile();
@@ -44,7 +40,6 @@ export const SCD = () => {
         const latest = profiles[0];
         setProfileData(latest);
         setLeetcodeUsername(latest.leetcode_username || userProfile.leetcode_id || '');
-        setScreenshotUrl(latest.screenshot_url || '');
       } else if (userProfile.leetcode_id) {
         // No SCD profile exists, but user has saved leetcode_id
         setLeetcodeUsername(userProfile.leetcode_id);
@@ -56,8 +51,6 @@ export const SCD = () => {
       }
     } catch (err) {
       console.error('Error loading profile:', err);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -74,20 +67,6 @@ export const SCD = () => {
       // Don't show error for auto-sync failure, user can manually sync
     } finally {
       setSyncing(false);
-    }
-  };
-
-  const loadProfile = async () => {
-    try {
-      const profiles = await getLeetCodeProfiles();
-      if (profiles && profiles.length > 0) {
-        const latest = profiles[0];
-        setProfileData(latest);
-        setLeetcodeUsername(latest.leetcode_username || '');
-        setScreenshotUrl(latest.screenshot_url || '');
-      }
-    } catch (err) {
-      console.error('Error loading profile:', err);
     }
   };
 
@@ -119,46 +98,6 @@ export const SCD = () => {
     }
   };
 
-  const handleSubmit = async () => {
-    if (!profileData || !profileData.id) {
-      setError('Please sync your profile first');
-      return;
-    }
-
-    if (!screenshotUrl.trim()) {
-      setError('Please provide a screenshot URL');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-    setSuccess('');
-
-    try {
-      const response = await submitProfileForReview(profileData.id, screenshotUrl.trim());
-      setProfileData(response.profile);
-      setSuccess('Profile submitted for review successfully!');
-      
-      setTimeout(() => setSuccess(''), 5000);
-    } catch (err) {
-      if (err.response?.status === 401) {
-        setError('Session expired. Please logout and login again.');
-      } else {
-        const errorMsg = err.response?.data?.error || 'Failed to submit profile';
-        setError(errorMsg);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Calculate fire height percentage
-  const getFireHeight = () => {
-    if (!profileData) return 0;
-    // Scale based on total solved (max 500 for full flame)
-    return Math.min((profileData.total_solved / 500) * 100, 100);
-  };
-
   // Get difficulty color
   const getDifficultyColor = (difficulty) => {
     switch(difficulty?.toLowerCase()) {
@@ -171,32 +110,6 @@ export const SCD = () => {
       default:
         return '#6b7280';
     }
-  };
-
-  // Status badge component
-  const StatusBadge = ({ status }) => {
-    const statusConfig = {
-      pending: { icon: Clock, text: 'Under Review', className: 'scd-status-pending' },
-      approved: { icon: CheckCircle, text: 'Approved', className: 'scd-status-approved' },
-      rejected: { icon: XCircle, text: 'Rejected', className: 'scd-status-rejected' }
-    };
-
-    const config = statusConfig[status];
-    if (!config) return null;
-
-    const Icon = config.icon;
-
-    return (
-      <motion.div
-        className={`scd-status-badge ${config.className}`}
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ type: 'spring' }}
-      >
-        <Icon size={18} />
-        <span>{config.text}</span>
-      </motion.div>
-    );
   };
 
   return (
@@ -245,51 +158,77 @@ export const SCD = () => {
         <div className="scd-main">
           {/* Profile Sync Section */}
           <GlassCard variant="heavy" className="scd-sync-card">
-            <h2 className="scd-section-title">
-              <Code size={24} />
-              LeetCode Profile Connection
-            </h2>
-
-            <div className="scd-sync-form">
-              <Input
-                label="LeetCode Username"
-                placeholder="Enter your username"
-                value={leetcodeUsername}
-                onChange={(e) => setLeetcodeUsername(e.target.value)}
-                icon={<Code size={20} />}
-                floatingLabel
-                disabled={syncing}
-              />
-
-              <Button
-                variant="primary"
-                withGlow
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              marginBottom: '1rem'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <Code size={20} style={{ color: 'var(--primary-color)' }} />
+                <div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    LeetCode Account
+                  </div>
+                  <div style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--text-primary)' }}>
+                    {leetcodeUsername || 'Not connected'}
+                  </div>
+                </div>
+              </div>
+              
+              <button
                 onClick={handleSync}
                 disabled={syncing || !leetcodeUsername.trim()}
+                style={{
+                  padding: '0.5rem 0.75rem',
+                  background: syncing ? 'transparent' : 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '8px',
+                  cursor: syncing || !leetcodeUsername.trim() ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.85rem',
+                  transition: 'all 0.3s ease',
+                  opacity: syncing || !leetcodeUsername.trim() ? 0.5 : 1
+                }}
+                onMouseEnter={(e) => {
+                  if (!syncing && leetcodeUsername.trim()) {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = syncing ? 'transparent' : 'rgba(255, 255, 255, 0.05)';
+                }}
               >
-                {syncing ? (
-                  <>
-                    <RefreshCw size={18} className="scd-spinning" />
-                    Syncing...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw size={18} />
-                    Sync Profile
-                  </>
-                )}
-              </Button>
+                <RefreshCw size={16} className={syncing ? 'scd-spinning' : ''} />
+                {syncing ? 'Syncing...' : 'Sync'}
+              </button>
             </div>
 
+            {!leetcodeUsername && (
+              <p style={{ 
+                fontSize: '0.85rem', 
+                color: 'var(--text-secondary)',
+                margin: 0
+              }}>
+                Set your LeetCode username in Profile Settings
+              </p>
+            )}
+
             {profileData && (
-              <motion.div
-                className="scd-last-sync"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-              >
-                <Activity size={16} />
+              <div style={{ 
+                fontSize: '0.75rem', 
+                color: 'var(--text-secondary)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                marginTop: '0.75rem'
+              }}>
+                <Activity size={12} />
                 <span>Last synced: {new Date(profileData.last_synced).toLocaleString()}</span>
-              </motion.div>
+              </div>
             )}
           </GlassCard>
 
@@ -450,49 +389,348 @@ export const SCD = () => {
             </GlassCard>
           )}
 
-          {/* Submission Section */}
+          {/* Monthly Target & Streak Section */}
           {profileData && (
-            <GlassCard variant="medium" className="scd-submission-card">
-              <h2 className="scd-section-title">
-                <Upload size={24} />
-                Submit for Review
-              </h2>
-
-              {(!profileData.status || profileData.status === 'draft') ? (
-                <>
-                  <Input
-                    label="Screenshot URL (Google Drive)"
-                    placeholder="https://drive.google.com/..."
-                    value={screenshotUrl}
-                    onChange={(e) => setScreenshotUrl(e.target.value)}
-                    icon={<Upload size={20} />}
-                    floatingLabel
-                  />
-
-                  <Button
-                    variant="primary"
-                    withGlow
-                    onClick={handleSubmit}
-                    disabled={loading || !screenshotUrl.trim()}
-                  >
-                    {loading ? 'Submitting...' : 'Submit for Review'}
-                  </Button>
-                </>
-              ) : (
-                <div className="scd-submission-status">
-                  <StatusBadge status={profileData.status} />
-                  
-                  {profileData.review_comments && (
-                    <div className="scd-review-comments">
-                      <h4>Mentor Comments:</h4>
-                      <p>{profileData.review_comments}</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginTop: '1.5rem' }}>
+              {/* Monthly Target Card */}
+              <GlassCard variant="medium">
+                <div style={{ textAlign: 'center' }}>
+                  <Target size={32} style={{ color: profileData.monthly_problems_count >= 10 ? '#4ade80' : '#fbbf24', marginBottom: '0.5rem' }} />
+                  <h3 style={{ margin: '0.5rem 0', fontSize: '1.1rem' }}>Monthly Target</h3>
+                  <div style={{ 
+                    fontSize: '2.5rem', 
+                    fontWeight: 'bold', 
+                    color: profileData.monthly_problems_count >= 10 ? '#4ade80' : '#fbbf24',
+                    margin: '1rem 0'
+                  }}>
+                    {profileData.monthly_problems_count}/10
+                  </div>
+                  <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0 }}>
+                    Problems this month
+                  </p>
+                  {profileData.monthly_problems_count >= 10 ? (
+                    <div style={{ 
+                      marginTop: '1rem', 
+                      padding: '0.5rem', 
+                      background: 'rgba(74, 222, 128, 0.1)',
+                      borderRadius: '8px',
+                      color: '#4ade80',
+                      fontSize: '0.85rem'
+                    }}>
+                      <CheckCircle size={16} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} />
+                      Target achieved! 🎉
+                    </div>
+                  ) : (
+                    <div style={{ 
+                      marginTop: '1rem', 
+                      padding: '0.5rem', 
+                      background: 'rgba(251, 191, 36, 0.1)',
+                      borderRadius: '8px',
+                      color: '#fbbf24',
+                      fontSize: '0.85rem'
+                    }}>
+                      {10 - profileData.monthly_problems_count} more to reach target
                     </div>
                   )}
                 </div>
-              )}
-            </GlassCard>
+              </GlassCard>
+
+              {/* Streak Card */}
+              <GlassCard variant="medium">
+                <div style={{ textAlign: 'center' }}>
+                  <Flame size={32} style={{ color: profileData.streak > 0 ? '#ff6b35' : 'var(--text-secondary)', marginBottom: '0.5rem' }} />
+                  <h3 style={{ margin: '0.5rem 0', fontSize: '1.1rem' }}>Current Streak</h3>
+                  <div style={{ 
+                    fontSize: '2.5rem', 
+                    fontWeight: 'bold', 
+                    color: profileData.streak > 0 ? '#ff6b35' : 'var(--text-secondary)',
+                    margin: '1rem 0'
+                  }}>
+                    {profileData.streak}
+                    <span style={{ fontSize: '1.2rem', marginLeft: '0.5rem' }}>🔥</span>
+                  </div>
+                  <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0 }}>
+                    Days streak
+                  </p>
+                  <div style={{ 
+                    marginTop: '1rem', 
+                    padding: '0.5rem', 
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    borderRadius: '8px',
+                    fontSize: '0.85rem',
+                    color: 'var(--text-secondary)'
+                  }}>
+                    <Activity size={14} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} />
+                    {profileData.total_active_days} total active days
+                  </div>
+                </div>
+              </GlassCard>
+            </div>
           )}
-        </div>
+          {/* LeetCode Calendar Heatmap */}
+          {profileData && profileData.submission_calendar && Object.keys(profileData.submission_calendar).length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <GlassCard variant="heavy">
+                <div style={{ padding: '1.5rem' }}>
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between',
+                    marginBottom: '1.5rem',
+                    paddingBottom: '1rem',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+                  }}>
+                    <h3 style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '0.5rem',
+                      fontSize: '1.1rem',
+                      margin: 0,
+                      fontWeight: '600'
+                    }}>
+                      <Activity size={20} style={{ color: 'var(--primary-color)' }} />
+                      Activity Calendar
+                    </h3>
+                    <div style={{ 
+                      fontSize: '0.85rem',
+                      color: 'var(--text-secondary)',
+                      display: 'flex',
+                      gap: '1.5rem'
+                    }}>
+                      {(() => {
+                        const calendar = profileData.submission_calendar || {};
+                        const totalSubmissions = Object.values(calendar).reduce((sum, count) => sum + parseInt(count || 0), 0);
+                        return (
+                          <>
+                            <span><strong style={{ color: 'var(--primary-color)' }}>{totalSubmissions}</strong> submissions</span>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                  
+                  <div>
+                  {(() => {
+                    const calendar = profileData.submission_calendar || {};
+                    
+                    // Get color based on submission count
+                    const getColor = (count) => {
+                      if (count === 0) return 'rgba(255, 255, 255, 0.05)';
+                      if (count <= 2) return 'rgba(74, 222, 128, 0.3)';
+                      if (count <= 5) return 'rgba(74, 222, 128, 0.5)';
+                      if (count <= 10) return 'rgba(74, 222, 128, 0.7)';
+                      return 'rgba(74, 222, 128, 0.9)';
+                    };
+                    
+                    // Group by months (last 12 months)
+                    const now = new Date();
+                    const months = [];
+                    
+                    for (let i = 11; i >= 0; i--) {
+                      const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                      const monthName = monthDate.toLocaleDateString('en-US', { month: 'short' });
+                      const year = monthDate.getFullYear();
+                      const month = monthDate.getMonth();
+                      
+                      // Get all days in this month
+                      const daysInMonth = new Date(year, month + 1, 0).getDate();
+                      const firstDay = new Date(year, month, 1).getDay(); // 0 = Sunday
+                      
+                      const days = [];
+                      
+                      // Add empty cells for days before month starts
+                      for (let j = 0; j < firstDay; j++) {
+                        days.push({ isEmpty: true });
+                      }
+                      
+                      // Add actual days
+                      for (let day = 1; day <= daysInMonth; day++) {
+                        const date = new Date(year, month, day);
+                        const midnightUTC = new Date(Date.UTC(year, month, day));
+                        const dateTimestamp = Math.floor(midnightUTC.getTime() / 1000).toString();
+                        
+                        const localMidnight = new Date(date);
+                        localMidnight.setHours(0, 0, 0, 0);
+                        const localTimestamp = Math.floor(localMidnight.getTime() / 1000).toString();
+                        
+                        const count = parseInt(calendar[dateTimestamp]) || parseInt(calendar[localTimestamp]) || 0;
+                        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                        
+                        days.push({
+                          date,
+                          dateStr,
+                          count,
+                          day
+                        });
+                      }
+                      
+                      months.push({
+                        monthName,
+                        year,
+                        days,
+                        totalDays: daysInMonth
+                      });
+                    }
+                    
+                    return (
+                      <div>
+                        <div style={{ 
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(4, 1fr)',
+                          gap: '1.5rem',
+                          marginBottom: '1.5rem'
+                        }}>
+                          {months.map((monthData, monthIdx) => (
+                            <div key={monthIdx} style={{
+                              background: 'rgba(255, 255, 255, 0.02)',
+                              borderRadius: '8px',
+                              padding: '0.75rem'
+                            }}>
+                              <div style={{ 
+                                fontSize: '0.75rem',
+                                fontWeight: '600',
+                                marginBottom: '0.5rem',
+                                color: 'var(--text-primary)',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.5px'
+                              }}>
+                                {monthData.monthName}
+                              </div>
+                              
+                              {/* Day labels */}
+                              <div style={{ 
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(7, 1fr)',
+                                gap: '2px',
+                                marginBottom: '4px'
+                              }}>
+                                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, idx) => (
+                                  <div key={idx} style={{
+                                    fontSize: '0.6rem',
+                                    textAlign: 'center',
+                                    color: 'var(--text-secondary)',
+                                    fontWeight: '600'
+                                  }}>
+                                    {day}
+                                  </div>
+                                ))}
+                              </div>
+                              
+                              {/* Calendar grid */}
+                              <div style={{ 
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(7, 1fr)',
+                                gap: '2px'
+                              }}>
+                                {monthData.days.map((day, dayIdx) => (
+                                  day.isEmpty ? (
+                                    <div key={dayIdx} style={{ 
+                                      width: '18px', 
+                                      height: '18px',
+                                      aspectRatio: '1'
+                                    }} />
+                                  ) : (
+                                    <div
+                                      key={dayIdx}
+                                      title={`${day.dateStr}: ${day.count} ${day.count === 1 ? 'submission' : 'submissions'}`}
+                                      style={{
+                                        width: '18px',
+                                        height: '18px',
+                                        aspectRatio: '1',
+                                        background: getColor(day.count),
+                                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                                        borderRadius: '3px',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '0.55rem',
+                                        color: day.count > 0 ? 'rgba(255, 255, 255, 0.7)' : 'rgba(255, 255, 255, 0.3)',
+                                        fontWeight: '600',
+                                        position: 'relative'
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        e.currentTarget.style.transform = 'scale(1.2)';
+                                        e.currentTarget.style.border = '2px solid var(--primary-color)';
+                                        e.currentTarget.style.zIndex = '10';
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        e.currentTarget.style.transform = 'scale(1)';
+                                        e.currentTarget.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+                                        e.currentTarget.style.zIndex = '1';
+                                      }}
+                                    >
+                                      {day.day}
+                                    </div>
+                                  )
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        
+                        {/* Legend */}
+                        <div style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center',
+                          gap: '0.5rem',
+                          fontSize: '0.7rem',
+                          color: 'var(--text-secondary)',
+                          paddingTop: '1rem',
+                          borderTop: '1px solid rgba(255, 255, 255, 0.1)'
+                        }}>
+                          <span style={{ fontWeight: '500' }}>Less</span>
+                          <div style={{ 
+                            width: '16px', 
+                            height: '16px', 
+                            background: 'rgba(255, 255, 255, 0.05)', 
+                            borderRadius: '3px', 
+                            border: '1px solid rgba(255, 255, 255, 0.1)' 
+                          }} />
+                          <div style={{ 
+                            width: '16px', 
+                            height: '16px', 
+                            background: 'rgba(74, 222, 128, 0.3)', 
+                            borderRadius: '3px', 
+                            border: '1px solid rgba(255, 255, 255, 0.1)' 
+                          }} />
+                          <div style={{ 
+                            width: '16px', 
+                            height: '16px', 
+                            background: 'rgba(74, 222, 128, 0.5)', 
+                            borderRadius: '3px', 
+                            border: '1px solid rgba(255, 255, 255, 0.1)' 
+                          }} />
+                          <div style={{ 
+                            width: '16px', 
+                            height: '16px', 
+                            background: 'rgba(74, 222, 128, 0.7)', 
+                            borderRadius: '3px', 
+                            border: '1px solid rgba(255, 255, 255, 0.1)' 
+                          }} />
+                          <div style={{ 
+                            width: '16px', 
+                            height: '16px', 
+                            background: 'rgba(74, 222, 128, 0.9)', 
+                            borderRadius: '3px', 
+                            border: '1px solid rgba(255, 255, 255, 0.1)' 
+                          }} />
+                          <span style={{ fontWeight: '500' }}>More</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+              </GlassCard>
+            </motion.div>
+          )}        </div>
 
         {/* Sidebar */}
         <div className="scd-sidebar">

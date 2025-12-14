@@ -6,14 +6,18 @@ from django.utils import timezone
 from django.db.models import Q, Count
 import re
 import requests
+from datetime import date
 
 from .models import (
+    HackathonRegistration,
     HackathonSubmission,
     BMCVideoSubmission,
     InternshipSubmission,
     GenAIProjectSubmission
 )
 from .serializers import (
+    HackathonRegistrationSerializer,
+    HackathonRegistrationCreateSerializer,
     HackathonSubmissionSerializer,
     HackathonSubmissionCreateSerializer,
     BMCVideoSubmissionSerializer,
@@ -24,6 +28,70 @@ from .serializers import (
     GenAIProjectSubmissionCreateSerializer,
     CFCStatsSerializer
 )
+
+
+class HackathonRegistrationViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing Hackathon registrations (before participation)
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        return HackathonRegistration.objects.filter(user=self.request.user)
+    
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return HackathonRegistrationCreateSerializer
+        return HackathonRegistrationSerializer
+    
+    @action(detail=False, methods=['get'])
+    def upcoming(self, request):
+        """Get upcoming registered hackathons"""
+        upcoming = self.get_queryset().filter(
+            is_completed=False,
+            participation_date__gte=date.today()
+        ).order_by('participation_date')
+        serializer = self.get_serializer(upcoming, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def mark_completed(self, request, pk=None):
+        """Mark a registration as completed"""
+        registration = self.get_object()
+        registration.is_completed = True
+        registration.save()
+        return Response({'status': 'marked as completed'})
+    
+    @action(detail=True, methods=['post'])
+    def create_submission(self, request, pk=None):
+        """Create a hackathon submission from a registration"""
+        registration = self.get_object()
+        
+        # Check if submission already exists
+        if registration.submission:
+            return Response(
+                {'error': 'Submission already exists for this registration'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Create submission with registration data
+        submission = HackathonSubmission.objects.create(
+            user=request.user,
+            hackathon_name=registration.hackathon_name,
+            mode=registration.mode,
+            registration_date=registration.registration_date,
+            participation_date=registration.participation_date,
+            status='draft',
+            current_step=1
+        )
+        
+        # Link submission to registration
+        registration.submission = submission
+        registration.is_completed = True
+        registration.save()
+        
+        serializer = HackathonSubmissionSerializer(submission)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class HackathonSubmissionViewSet(viewsets.ModelViewSet):

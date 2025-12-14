@@ -29,6 +29,43 @@ axiosInstance.interceptors.request.use(
   }
 );
 
+// ==================== HACKATHON REGISTRATIONS ====================
+
+export const getHackathonRegistrations = async () => {
+  const response = await axiosInstance.get('/hackathon-registrations/');
+  return response.data;
+};
+
+export const getUpcomingHackathons = async () => {
+  const response = await axiosInstance.get('/hackathon-registrations/upcoming/');
+  return response.data;
+};
+
+export const createHackathonRegistration = async (data) => {
+  const response = await axiosInstance.post('/hackathon-registrations/', data);
+  return response.data;
+};
+
+export const updateHackathonRegistration = async (id, data) => {
+  const response = await axiosInstance.put(`/hackathon-registrations/${id}/`, data);
+  return response.data;
+};
+
+export const deleteHackathonRegistration = async (id) => {
+  const response = await axiosInstance.delete(`/hackathon-registrations/${id}/`);
+  return response.data;
+};
+
+export const markRegistrationCompleted = async (id) => {
+  const response = await axiosInstance.post(`/hackathon-registrations/${id}/mark_completed/`);
+  return response.data;
+};
+
+export const createSubmissionFromRegistration = async (id) => {
+  const response = await axiosInstance.post(`/hackathon-registrations/${id}/create_submission/`);
+  return response.data;
+};
+
 // ==================== HACKATHON SUBMISSIONS ====================
 
 export const getHackathonSubmissions = async () => {

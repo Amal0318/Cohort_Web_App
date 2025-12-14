@@ -1,11 +1,45 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import (
+    HackathonRegistration,
     HackathonSubmission,
     BMCVideoSubmission,
     InternshipSubmission,
     GenAIProjectSubmission
 )
+
+
+class HackathonRegistrationSerializer(serializers.ModelSerializer):
+    """Serializer for Hackathon registrations"""
+    user = serializers.StringRelatedField(read_only=True)
+    days_until_event = serializers.IntegerField(read_only=True)
+    is_upcoming = serializers.BooleanField(read_only=True)
+    
+    class Meta:
+        model = HackathonRegistration
+        fields = [
+            'id', 'user', 'hackathon_name', 'mode', 'registration_date',
+            'participation_date', 'hackathon_url', 'notes', 'is_completed',
+            'days_until_event', 'is_upcoming', 'submission',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'user', 'created_at', 'updated_at', 
+                           'days_until_event', 'is_upcoming']
+
+
+class HackathonRegistrationCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating/updating Hackathon registrations"""
+    
+    class Meta:
+        model = HackathonRegistration
+        fields = [
+            'hackathon_name', 'mode', 'registration_date', 'participation_date',
+            'hackathon_url', 'notes'
+        ]
+    
+    def create(self, validated_data):
+        validated_data['user'] = self.context['request'].user
+        return super().create(validated_data)
 
 
 class HackathonSubmissionSerializer(serializers.ModelSerializer):
