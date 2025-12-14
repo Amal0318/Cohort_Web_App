@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
     LayoutDashboard, Users, UserCheck, Trophy, Bell, Shield, Settings,
-    ChevronLeft, ChevronRight
+    ChevronLeft, ChevronRight, UserCog
 } from 'lucide-react';
 import './AdminSidebar.css';
 
@@ -11,6 +11,7 @@ const ADMIN_NAV_ITEMS = [
     { path: '/admin-dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/admin/students', label: 'Total Students', icon: Users },
     { path: '/admin/mentors', label: 'Mentors Details', icon: UserCheck },
+    { path: '/admin/assignments', label: 'Assign Mentors', icon: UserCog },
     { path: '/admin/leaderboard', label: 'Leaderboard', icon: Trophy },
     { path: '/admin/notifications', label: 'Notifications', icon: Bell },
     { path: '/admin/roles', label: 'Roles', icon: Shield },

@@ -29,6 +29,7 @@ import Leaderboard from './pages/admin/leaderboard/Leaderboard';
 import Notifications from './pages/admin/notifications/Notifications';
 import Roles from './pages/admin/roles/Roles';
 import Settings from './pages/admin/settings/Settings';
+import StudentMentorAssignment from './pages/admin/assignments/StudentMentorAssignment';
 import MentorLayout from './pages/mentor/MentorLayout';
 import FloorWingDashboard from './pages/floorwing/FloorWingDashboard';
 import Login from './pages/Login';
@@ -276,6 +277,7 @@ function AppContent() {
           <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
             <Route path="students" element={<StudentProfiles />} />
             <Route path="mentors" element={<MentorManagement />} />
+            <Route path="assignments" element={<StudentMentorAssignment />} />
             <Route path="floors" element={<FloorManagement />} />
             <Route path="submissions" element={<SubmissionsManagement />} />
             <Route path="rules" element={<PillarRulesConfig />} />

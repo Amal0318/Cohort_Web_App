@@ -9,6 +9,16 @@ class UserProfile(models.Model):
     
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     
+    # Mentor assignment (for students only)
+    assigned_mentor = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='mentored_students',
+        help_text="Mentor assigned to this student"
+    )
+    
     # Platform IDs
     leetcode_id = models.CharField(max_length=100, blank=True, null=True, help_text="LeetCode username")
     github_id = models.CharField(max_length=100, blank=True, null=True, help_text="GitHub username")

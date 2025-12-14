@@ -55,6 +55,12 @@ urlpatterns = [
     path('api/scd/', include('apps.scd.urls')),
     path('api/dashboard/', include('apps.dashboard.urls')),
     path('api/hackathons/', include('hackathons.urls')),
+    
+    # Mentor APIs
+    path('api/mentor/', include('apps.mentor_urls')),
+    
+    # Admin APIs
+    path('api/admin/', include('apps.admin_urls')),
 ]
 
 # Serve media files in development

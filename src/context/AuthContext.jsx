@@ -12,6 +12,7 @@ const ROLE_ACCESS = {
         '/admin-dashboard',
         '/admin/students',
         '/admin/mentors',
+        '/admin/assignments',
         '/admin/floors',
         '/admin/submissions',
         '/admin/rules',
