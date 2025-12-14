@@ -1,13 +1,154 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { BookOpen, Users, TrendingUp, Award, Calendar, Bell, User, Mail, Phone, Hash } from 'lucide-react';
+import { BookOpen, Users, TrendingUp, Award, Calendar, Bell, User, Mail, Phone, Hash, CheckCircle, X } from 'lucide-react';
 import GlassCard from '../../components/GlassCard';
 import { useAuth } from '../../context/AuthContext';
+import { getNotifications, markNotificationRead, deleteNotification } from '../../services/notifications';
+import { getMentorStudents } from '../../services/mentor';
 import './MentorHome.css';
 
 function MentorHome() {
     const { user } = useAuth();
     const [showProfile, setShowProfile] = useState(false);
+    const [notifications, setNotifications] = useState([]);
+    const [loadingNotifications, setLoadingNotifications] = useState(true);
+    const [students, setStudents] = useState([]);
+    const [stats, setStats] = useState({
+        totalStudents: 0,
+        activeSubmissions: 0,
+        completedReviews: 0,
+        pendingReviews: 0,
+    });
+
+    // Fetch notifications and students on mount
+    useEffect(() => {
+        loadNotifications();
+        loadStudents();
+    }, []);
+
+    const loadStudents = async () => {
+        try {
+            const data = await getMentorStudents();
+            setStudents(data.students || []);
+            
+            // Calculate stats from students data
+            const totalStudents = data.students.length;
+            let activeSubmissions = 0;
+            let completedReviews = 0;
+            let pendingReviews = 0;
+            
+            data.students.forEach(student => {
+                Object.values(student.submissions).forEach(submission => {
+                    if (submission.status === 'pending') {
+                        activeSubmissions++;
+                        pendingReviews += submission.count;
+                    }
+                    if (submission.status === 'completed') {
+                        completedReviews += submission.count;
+                    }
+                });
+            });
+            
+            setStats({
+                totalStudents,
+                activeSubmissions,
+                completedReviews,
+                pendingReviews
+            });
+        } catch (error) {
+            console.error('Error loading students:', error);
+        }
+    };
+
+    const loadNotifications = async () => {
+        try {
+            setLoadingNotifications(true);
+            console.log('Fetching notifications...');
+            const data = await getNotifications();
+            console.log('Notifications received:', data);
+            setNotifications(data);
+        } catch (error) {
+            console.error('Error loading notifications:', error);
+            console.error('Error details:', error.response?.data);
+        } finally {
+            setLoadingNotifications(false);
+        }
+    };
+
+    const handleMarkAsRead = async (notificationId) => {
+        try {
+            await markNotificationRead(notificationId);
+            setNotifications(prev => 
+                prev.map(notif => 
+                    notif.id === notificationId ? { ...notif, is_read: true } : notif
+                )
+            );
+        } catch (error) {
+            console.error('Error marking notification as read:', error);
+        }
+    };
+
+    const handleDeleteNotification = async (notificationId) => {
+        try {
+            await deleteNotification(notificationId);
+            setNotifications(prev => prev.filter(notif => notif.id !== notificationId));
+        } catch (error) {
+            console.error('Error deleting notification:', error);
+        }
+    };
+
+    const getNotificationIcon = (type) => {
+        switch(type) {
+            case 'warning':
+                return '⚠️';
+            case 'success':
+                return '✅';
+            case 'error':
+                return '❌';
+            default:
+                return 'ℹ️';
+        }
+    };
+
+    const getNotificationStyle = (type) => {
+        switch(type) {
+            case 'warning':
+                return {
+                    background: 'rgba(251, 191, 36, 0.1)',
+                    borderLeft: '3px solid #fbbf24'
+                };
+            case 'success':
+                return {
+                    background: 'rgba(74, 222, 128, 0.1)',
+                    borderLeft: '3px solid #4ade80'
+                };
+            case 'error':
+                return {
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    borderLeft: '3px solid #ef4444'
+                };
+            default:
+                return {
+                    background: 'rgba(96, 165, 250, 0.1)',
+                    borderLeft: '3px solid #60a5fa'
+                };
+        }
+    };
+
+    const formatNotificationTime = (timestamp) => {
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMins / 60);
+        const diffDays = Math.floor(diffHours / 24);
+
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+        if (diffHours < 24) return `${diffHours}h ago`;
+        if (diffDays < 7) return `${diffDays}d ago`;
+        return date.toLocaleDateString();
+    };
 
     // Mock mentor data
     const mentorInfo = {
@@ -17,21 +158,6 @@ function MentorHome() {
         mentorId: 'MNT-001',
         studentsHandling: 5,
     };
-
-    const stats = {
-        totalStudents: 5,
-        activeSubmissions: 8,
-        completedReviews: 42,
-        pendingReviews: 8,
-    };
-
-    const recentActivity = [
-        { id: 1, student: 'Amal R', action: 'Submitted CLT project', time: '2 hours ago', type: 'submission' },
-        { id: 2, student: 'Priya S', action: 'Completed CFC milestone', time: '5 hours ago', type: 'completed' },
-        { id: 3, student: 'Raj K', action: 'Needs review for IIPC', time: '1 day ago', type: 'pending' },
-        { id: 4, student: 'Meera L', action: 'Submitted CFC project', time: '1 day ago', type: 'submission' },
-        { id: 5, student: 'Karthik M', action: 'Completed SRI task', time: '2 days ago', type: 'completed' },
-    ];
 
     const upcomingDeadlines = [
         { id: 1, title: 'CLT Project Review', dueDate: 'Tomorrow', priority: 'high' },
@@ -145,25 +271,119 @@ function MentorHome() {
             <div className="mentor-home-dashboard">
                 {/* Left Column */}
                 <div className="mentor-home-left-column">
-                    {/* Recent Activity */}
+                    {/* Notifications */}
                     <GlassCard>
                         <div className="section-header">
                             <h2 className="section-title">
                                 <Bell size={24} />
-                                Recent Activity
+                                Notifications
                             </h2>
                         </div>
                         <div className="activity-list">
-                            {recentActivity.map((activity) => (
-                                <div key={activity.id} className="activity-item">
-                                    <div className={`activity-indicator ${activity.type}`}></div>
-                                    <div className="activity-info">
-                                        <p className="activity-student">{activity.student}</p>
-                                        <p className="activity-action">{activity.action}</p>
-                                    </div>
-                                    <span className="activity-time">{activity.time}</span>
+                            {loadingNotifications ? (
+                                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                                    Loading notifications...
                                 </div>
-                            ))}
+                            ) : notifications.length === 0 ? (
+                                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                                    No new notifications
+                                </div>
+                            ) : (
+                                notifications.map((notification) => (
+                                    <motion.div
+                                        key={notification.id}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, x: -20 }}
+                                        style={{
+                                            ...getNotificationStyle(notification.notification_type),
+                                            padding: '1rem',
+                                            borderRadius: '8px',
+                                            marginBottom: '0.75rem',
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'flex-start',
+                                            gap: '0.75rem',
+                                            opacity: notification.is_read ? 0.6 : 1,
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ 
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                gap: '0.5rem',
+                                                marginBottom: '0.25rem'
+                                            }}>
+                                                <span style={{ fontSize: '1.2rem' }}>
+                                                    {getNotificationIcon(notification.notification_type)}
+                                                </span>
+                                                <span style={{ 
+                                                    fontSize: '0.75rem', 
+                                                    color: 'var(--text-secondary)',
+                                                    textTransform: 'uppercase',
+                                                    fontWeight: '600'
+                                                }}>
+                                                    {notification.notification_type}
+                                                </span>
+                                            </div>
+                                            <p style={{ 
+                                                margin: 0, 
+                                                fontSize: '0.9rem',
+                                                lineHeight: '1.4',
+                                                color: 'var(--text-primary)'
+                                            }}>
+                                                {notification.message}
+                                            </p>
+                                            <span style={{ 
+                                                fontSize: '0.75rem', 
+                                                color: 'var(--text-secondary)',
+                                                marginTop: '0.25rem',
+                                                display: 'block'
+                                            }}>
+                                                {formatNotificationTime(notification.created_at)}
+                                            </span>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                            {!notification.is_read && (
+                                                <button
+                                                    onClick={() => handleMarkAsRead(notification.id)}
+                                                    style={{
+                                                        background: 'rgba(74, 222, 128, 0.2)',
+                                                        border: 'none',
+                                                        borderRadius: '4px',
+                                                        padding: '0.25rem 0.5rem',
+                                                        cursor: 'pointer',
+                                                        color: '#4ade80',
+                                                        fontSize: '0.8rem',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '0.25rem'
+                                                    }}
+                                                    title="Mark as read"
+                                                >
+                                                    <CheckCircle size={14} />
+                                                </button>
+                                            )}
+                                            <button
+                                                onClick={() => handleDeleteNotification(notification.id)}
+                                                style={{
+                                                    background: 'rgba(239, 68, 68, 0.2)',
+                                                    border: 'none',
+                                                    borderRadius: '4px',
+                                                    padding: '0.25rem 0.5rem',
+                                                    cursor: 'pointer',
+                                                    color: '#ef4444',
+                                                    fontSize: '0.8rem'
+                                                }}
+                                                title="Delete"
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        </div>
+                                    </motion.div>
+                                ))
+                            )}
                         </div>
                     </GlassCard>
                 </div>

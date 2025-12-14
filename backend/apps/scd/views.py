@@ -125,14 +125,14 @@ class LeetCodeProfileViewSet(viewsets.ModelViewSet):
                 monthly_target_met = (calendar_data and calendar_data['monthly_problems'] >= 10) if calendar_data else False
                 
                 # If target not met, create notification for mentor
-                if not monthly_target_met and hasattr(request.user, 'student_profile') and request.user.student_profile.mentor:
+                if not monthly_target_met and hasattr(request.user, 'profile') and request.user.profile.assigned_mentor:
                     from apps.dashboard.models import Notification
                     from datetime import datetime
                     
                     # Check if notification already exists for this month
                     current_month = datetime.now().strftime('%Y-%m')
                     existing_notif = Notification.objects.filter(
-                        user=request.user.student_profile.mentor,
+                        user=request.user.profile.assigned_mentor,
                         message__contains=f"monthly target ({current_month})",
                         created_at__month=datetime.now().month,
                         created_at__year=datetime.now().year
@@ -142,7 +142,7 @@ class LeetCodeProfileViewSet(viewsets.ModelViewSet):
                         problems_count = calendar_data['monthly_problems'] if calendar_data else 0
                         student_name = request.user.get_full_name() or request.user.username
                         Notification.objects.create(
-                            user=request.user.student_profile.mentor,
+                            user=request.user.profile.assigned_mentor,
                             message=f"{student_name} has only solved {problems_count}/10 problems this month on LeetCode (monthly target ({current_month}))",
                             notification_type='warning'
                         )

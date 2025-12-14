@@ -44,6 +44,23 @@ class HackathonRegistrationViewSet(viewsets.ModelViewSet):
             return HackathonRegistrationCreateSerializer
         return HackathonRegistrationSerializer
     
+    def perform_create(self, serializer):
+        """Save the registration and notify mentor"""
+        registration = serializer.save(user=self.request.user)
+        
+        # Notify mentor about the hackathon registration
+        if hasattr(self.request.user, 'profile') and self.request.user.profile.assigned_mentor:
+            from apps.dashboard.models import Notification
+            
+            mentor = self.request.user.profile.assigned_mentor
+            student_name = self.request.user.get_full_name() or self.request.user.username
+            
+            Notification.objects.create(
+                user=mentor,
+                message=f"{student_name} has registered for {registration.hackathon_name} hackathon ({registration.get_mode_display()}) scheduled on {registration.participation_date.strftime('%B %d, %Y')}",
+                notification_type='info'
+            )
+    
     @action(detail=False, methods=['get'])
     def upcoming(self, request):
         """Get upcoming registered hackathons"""

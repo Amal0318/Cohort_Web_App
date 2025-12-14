@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 // eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, CheckCircle, Clock, XCircle, Lightbulb, Heart, Trophy, Linkedin, Code, Search, MessageCircle, Send, X as CloseIcon } from 'lucide-react';
+import { Users, CheckCircle, Clock, XCircle, Lightbulb, Heart, Trophy, Linkedin, Code, Search, MessageCircle, Send, X as CloseIcon, RefreshCw } from 'lucide-react';
 import GlassCard from '../../components/GlassCard';
 import Button from '../../components/Button';
 import messageService from '../../services/messageService';
+import { getMentorStudents } from '../../services/mentor';
 import SubmissionReview from './SubmissionReview';
 import './MentorDashboard.css';
 
@@ -14,79 +15,62 @@ function MentorDashboard() {
     const [showChatModal, setShowChatModal] = useState(false);
     const [message, setMessage] = useState('');
     const [messageType, setMessageType] = useState('general');
+    const [students, setStudents] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
-    // Mock data for students assigned to this mentor
-    const students = [
-        {
-            id: 1,
-            name: 'Amal R',
-            email: 'amal@student.com',
-            rollNo: 'CS101',
-            submissions: {
-                clt: { status: 'completed', count: 5, lastSubmission: '2 days ago' },
-                sri: { status: 'pending', count: 2, lastSubmission: '5 hours ago' },
-                cfc: { status: 'completed', count: 3, lastSubmission: '1 week ago' },
-                iipc: { status: 'completed', count: 1, lastSubmission: '3 days ago' },
-                scd: { status: 'not-started', count: 0, lastSubmission: 'Never' },
-            }
-        },
-        {
-            id: 2,
-            name: 'Priya S',
-            email: 'priya@student.com',
-            rollNo: 'CS102',
-            submissions: {
-                clt: { status: 'completed', count: 4, lastSubmission: '1 day ago' },
-                sri: { status: 'completed', count: 3, lastSubmission: '2 days ago' },
-                cfc: { status: 'pending', count: 2, lastSubmission: '3 hours ago' },
-                iipc: { status: 'not-started', count: 0, lastSubmission: 'Never' },
-                scd: { status: 'completed', count: 2, lastSubmission: '4 days ago' },
-            }
-        },
-        {
-            id: 3,
-            name: 'Raj K',
-            email: 'raj@student.com',
-            rollNo: 'CS103',
-            submissions: {
-                clt: { status: 'pending', count: 3, lastSubmission: '1 hour ago' },
-                sri: { status: 'completed', count: 4, lastSubmission: '1 week ago' },
-                cfc: { status: 'completed', count: 5, lastSubmission: '2 days ago' },
-                iipc: { status: 'pending', count: 1, lastSubmission: '6 hours ago' },
-                scd: { status: 'completed', count: 3, lastSubmission: '5 days ago' },
-            }
-        },
-        {
-            id: 4,
-            name: 'Meera L',
-            email: 'meera@student.com',
-            rollNo: 'CS104',
-            submissions: {
-                clt: { status: 'completed', count: 6, lastSubmission: '3 days ago' },
-                sri: { status: 'not-started', count: 0, lastSubmission: 'Never' },
-                cfc: { status: 'pending', count: 1, lastSubmission: '2 hours ago' },
-                iipc: { status: 'completed', count: 2, lastSubmission: '1 week ago' },
-                scd: { status: 'completed', count: 4, lastSubmission: '6 days ago' },
-            }
-        },
-        {
-            id: 5,
-            name: 'Karthik M',
-            email: 'karthik@student.com',
-            rollNo: 'CS105',
-            submissions: {
-                clt: { status: 'completed', count: 3, lastSubmission: '4 days ago' },
-                sri: { status: 'completed', count: 2, lastSubmission: '1 day ago' },
-                cfc: { status: 'completed', count: 4, lastSubmission: '3 days ago' },
-                iipc: { status: 'completed', count: 3, lastSubmission: '2 days ago' },
-                scd: { status: 'pending', count: 1, lastSubmission: '8 hours ago' },
-            }
-        },
-    ];
+    // Fetch students on mount
+    useEffect(() => {
+        loadStudents();
+    }, []);
 
-    const filteredStudents = students.filter(student =>
+    const loadStudents = async () => {
+        try {
+            setLoading(true);
+            setError('');
+            const data = await getMentorStudents();
+            console.log('Fetched students:', data);
+            setStudents(data.students || []);
+        } catch (err) {
+            console.error('Error loading students:', err);
+            setError('Failed to load students. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const formatLastSubmission = (timestamp) => {
+        if (!timestamp) return 'Never';
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMins / 60);
+        const diffDays = Math.floor(diffHours / 24);
+
+        if (diffMins < 60) return `${diffMins}m ago`;
+        if (diffHours < 24) return `${diffHours}h ago`;
+        if (diffDays < 7) return `${diffDays}d ago`;
+        if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
+        return date.toLocaleDateString();
+    };
+
+    // Update submissions with formatted timestamps
+    const studentsWithFormattedDates = students.map(student => ({
+        ...student,
+        submissions: Object.entries(student.submissions).reduce((acc, [key, value]) => ({
+            ...acc,
+            [key]: {
+                ...value,
+                lastSubmission: formatLastSubmission(value.lastSubmission)
+            }
+        }), {})
+    }));
+
+    const filteredStudents = studentsWithFormattedDates.filter(student =>
         student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        student.rollNo.toLowerCase().includes(searchQuery.toLowerCase())
+        student.rollNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        student.username.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     return (
@@ -98,12 +82,43 @@ function MentorDashboard() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
             >
-                <h1 className="mentor-title">Student List</h1>
-                <p className="mentor-subtitle">Monitor and review your assigned students</p>
+                <div className="mentor-header-content">
+                    <h1>Student Dashboard</h1>
+                    <p>Monitor and review your students' progress</p>
+                </div>
+                <Button 
+                    onClick={loadStudents} 
+                    disabled={loading}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                >
+                    <RefreshCw size={16} className={loading ? 'spinning' : ''} />
+                    Refresh
+                </Button>
             </motion.div>
 
-            {/* Two Column Layout */}
-            <div className="mentor-content">
+            {/* Loading State */}
+            {loading && (
+                <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
+                    <RefreshCw size={48} className="spinning" style={{ marginBottom: '1rem' }} />
+                    <p>Loading students...</p>
+                </div>
+            )}
+
+            {/* Error State */}
+            {error && (
+                <GlassCard>
+                    <div style={{ textAlign: 'center', padding: '2rem', color: '#ef4444' }}>
+                        <p>{error}</p>
+                        <Button onClick={loadStudents} style={{ marginTop: '1rem' }}>Try Again</Button>
+                    </div>
+                </GlassCard>
+            )}
+
+            {/* Main Content */}
+            {!loading && !error && (
+                <>
+                    {/* Two Column Layout */}
+                    <div className="mentor-content">
                 {/* Left Side - Student List */}
                 <motion.div
                     className="students-panel"
@@ -296,6 +311,8 @@ function MentorDashboard() {
                     </motion.div>
                 )}
             </AnimatePresence>
+                </>
+            )}
         </div>
     );
 }

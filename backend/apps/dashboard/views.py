@@ -6,6 +6,8 @@ from django.db.models import Count, Q
 from django.core.cache import cache
 from datetime import datetime
 import traceback
+from .models import Notification
+from .serializers import NotificationSerializer
 from apps.clt.models import CLTSubmission
 # SRI models not yet implemented, so we'll handle it gracefully
 try:
@@ -344,3 +346,52 @@ class DashboardStatsView(APIView):
             })
         
         return notifications[:5]
+
+
+class NotificationListView(APIView):
+    """API endpoint to get user notifications"""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        """Get all notifications for the current user"""
+        notifications = Notification.objects.filter(user=request.user)[:50]
+        serializer = NotificationSerializer(notifications, many=True)
+        return Response(serializer.data)
+    
+    def delete(self, request):
+        """Delete all read notifications"""
+        deleted_count = Notification.objects.filter(user=request.user, is_read=True).delete()[0]
+        return Response({
+            'message': f'Deleted {deleted_count} notification(s)',
+            'count': deleted_count
+        })
+
+
+class NotificationMarkReadView(APIView):
+    """Mark a notification as read"""
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, pk):
+        """Mark a specific notification as read"""
+        try:
+            notification = Notification.objects.get(pk=pk, user=request.user)
+            notification.is_read = True
+            notification.save()
+            return Response({'status': 'marked as read'})
+        except Notification.DoesNotExist:
+            return Response(
+                {'error': 'Notification not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+    
+    def delete(self, request, pk):
+        """Delete a specific notification"""
+        try:
+            notification = Notification.objects.get(pk=pk, user=request.user)
+            notification.delete()
+            return Response({'status': 'notification deleted'})
+        except Notification.DoesNotExist:
+            return Response(
+                {'error': 'Notification not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )

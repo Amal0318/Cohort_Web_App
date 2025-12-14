@@ -8,6 +8,9 @@ from apps import mentor_views
 app_name = 'mentor'
 
 urlpatterns = [
+    # Mentor students list
+    path('students/', mentor_views.get_mentor_students, name='mentor-students'),
+    
     # Pillar review endpoints
     path('pillar/<str:pillar>/submissions/', mentor_views.get_pillar_submissions, name='pillar-submissions'),
     path('pillar/<str:pillar>/stats/', mentor_views.get_pillar_stats, name='pillar-stats'),
