@@ -71,8 +71,10 @@ export const SCD = () => {
   };
 
   const handleSync = async () => {
-    if (!leetcodeUsername.trim()) {
-      setError('Please enter your LeetCode username');
+    console.log('Sync button clicked! Username:', leetcodeUsername);
+    
+    if (!leetcodeUsername || !leetcodeUsername.trim()) {
+      setError('Please set your LeetCode username in Profile Settings first');
       return;
     }
 
@@ -83,14 +85,16 @@ export const SCD = () => {
     try {
       const response = await syncLeetCodeProfile(leetcodeUsername.trim());
       setProfileData(response.profile);
-      setSuccess('Profile synced successfully! Your stats have been updated.');
+      setSuccess(response.warnings ? 
+        `Profile synced with warnings: ${response.warnings.join(', ')}` : 
+        'Profile synced successfully! Your stats have been updated.');
       
-      setTimeout(() => setSuccess(''), 5000);
+      setTimeout(() => setSuccess(''), 8000);
     } catch (err) {
       if (err.response?.status === 401) {
         setError('Session expired. Please logout and login again.');
       } else {
-        const errorMsg = err.response?.data?.error || 'Failed to sync profile. Please check your username.';
+        const errorMsg = err.response?.data?.error || 'Failed to sync profile. LeetCode API may be down. Try again later.';
         setError(errorMsg);
       }
     } finally {
@@ -178,32 +182,35 @@ export const SCD = () => {
               
               <button
                 onClick={handleSync}
-                disabled={syncing || !leetcodeUsername.trim()}
+                disabled={syncing}
                 style={{
-                  padding: '0.5rem 0.75rem',
-                  background: syncing ? 'transparent' : 'rgba(255, 255, 255, 0.05)',
+                  padding: '0.65rem 1rem',
+                  background: syncing ? 'rgba(255, 255, 255, 0.05)' : (leetcodeUsername ? 'var(--primary-color)' : 'rgba(255, 255, 255, 0.1)'),
                   border: '1px solid var(--border-color)',
                   borderRadius: '8px',
-                  cursor: syncing || !leetcodeUsername.trim() ? 'not-allowed' : 'pointer',
+                  cursor: syncing ? 'not-allowed' : 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.5rem',
-                  color: 'var(--text-primary)',
-                  fontSize: '0.85rem',
+                  color: syncing ? 'var(--text-secondary)' : (leetcodeUsername ? '#000' : 'var(--text-secondary)'),
+                  fontSize: '0.9rem',
+                  fontWeight: '600',
                   transition: 'all 0.3s ease',
-                  opacity: syncing || !leetcodeUsername.trim() ? 0.5 : 1
+                  opacity: syncing ? 0.5 : (leetcodeUsername ? 1 : 0.6)
                 }}
                 onMouseEnter={(e) => {
-                  if (!syncing && leetcodeUsername.trim()) {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                  if (!syncing && leetcodeUsername) {
+                    e.currentTarget.style.background = '#FFD700';
                   }
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = syncing ? 'transparent' : 'rgba(255, 255, 255, 0.05)';
+                  if (!syncing && leetcodeUsername) {
+                    e.currentTarget.style.background = 'var(--primary-color)';
+                  }
                 }}
               >
                 <RefreshCw size={16} className={syncing ? 'scd-spinning' : ''} />
-                {syncing ? 'Syncing...' : 'Sync'}
+                {syncing ? 'Syncing...' : 'Sync Now'}
               </button>
             </div>
 
@@ -223,8 +230,7 @@ export const SCD = () => {
                 color: 'var(--text-secondary)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.5rem',
-                marginTop: '0.75rem'
+                gap: '0.5rem'
               }}>
                 <Activity size={12} />
                 <span>Last synced: {new Date(profileData.last_synced).toLocaleString()}</span>

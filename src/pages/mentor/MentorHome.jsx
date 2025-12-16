@@ -5,6 +5,7 @@ import GlassCard from '../../components/GlassCard';
 import { useAuth } from '../../context/AuthContext';
 import { getNotifications, markNotificationRead, deleteNotification } from '../../services/notifications';
 import { getMentorStudents } from '../../services/mentor';
+import { getAnnouncements } from '../../services/announcements';
 import './MentorHome.css';
 
 function MentorHome() {
@@ -13,6 +14,7 @@ function MentorHome() {
     const [notifications, setNotifications] = useState([]);
     const [loadingNotifications, setLoadingNotifications] = useState(true);
     const [students, setStudents] = useState([]);
+    const [announcements, setAnnouncements] = useState([]);
     const [stats, setStats] = useState({
         totalStudents: 0,
         activeSubmissions: 0,
@@ -24,7 +26,17 @@ function MentorHome() {
     useEffect(() => {
         loadNotifications();
         loadStudents();
+        loadAnnouncements();
     }, []);
+
+    const loadAnnouncements = async () => {
+        try {
+            const data = await getAnnouncements();
+            setAnnouncements(data.announcements || []);
+        } catch (error) {
+            console.error('Error loading announcements:', error);
+        }
+    };
 
     const loadStudents = async () => {
         try {
@@ -150,20 +162,42 @@ function MentorHome() {
         return date.toLocaleDateString();
     };
 
+    const getPriorityColor = (priority) => {
+        switch(priority) {
+            case 'high':
+                return '#ef4444';
+            case 'medium':
+                return '#f59e0b';
+            case 'low':
+                return '#10b981';
+            default:
+                return '#6b7280';
+        }
+    };
+
+    const getCategoryIcon = (category) => {
+        switch(category) {
+            case 'event':
+                return '🎉';
+            case 'deadline':
+                return '⏰';
+            case 'important':
+                return '❗';
+            case 'reminder':
+                return '🔔';
+            default:
+                return 'ℹ️';
+        }
+    };
+
     // Mock mentor data
     const mentorInfo = {
         name: user?.name || 'Dr. Sarah Johnson',
         email: user?.email || 'mentor@test.com',
         phone: '+91 9876543210',
         mentorId: 'MNT-001',
-        studentsHandling: 5,
+        studentsHandling: stats.totalStudents,
     };
-
-    const upcomingDeadlines = [
-        { id: 1, title: 'CLT Project Review', dueDate: 'Tomorrow', priority: 'high' },
-        { id: 2, title: 'SRI Evaluation', dueDate: 'In 3 days', priority: 'medium' },
-        { id: 3, title: 'IIPC Assessment', dueDate: 'In 5 days', priority: 'low' },
-    ];
 
     return (
         <div className="mentor-home-container">
@@ -390,24 +424,45 @@ function MentorHome() {
 
                 {/* Right Column */}
                 <div className="mentor-home-right-column">
-                    {/* Upcoming Deadlines */}
+                    {/* Upcoming Events/Announcements */}
                     <GlassCard>
                         <div className="section-header">
                             <h2 className="section-title">
                                 <Calendar size={24} />
-                                Upcoming Deadlines
+                                Upcoming Events & Deadlines
                             </h2>
                         </div>
                         <div className="deadlines-list">
-                            {upcomingDeadlines.map((deadline) => (
-                                <div key={deadline.id} className="deadline-item">
-                                    <div className={`deadline-priority ${deadline.priority}`}></div>
-                                    <div className="deadline-info">
-                                        <p className="deadline-title">{deadline.title}</p>
-                                        <span className="deadline-date">{deadline.dueDate}</span>
-                                    </div>
+                            {announcements.length === 0 ? (
+                                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                                    No upcoming events or deadlines
                                 </div>
-                            ))}
+                            ) : (
+                                announcements
+                                    .filter(ann => ann.category === 'event' || ann.category === 'deadline')
+                                    .slice(0, 5)
+                                    .map((announcement) => (
+                                        <div key={announcement.id} className="deadline-item">
+                                            <div 
+                                                className="deadline-priority" 
+                                                style={{ background: getPriorityColor(announcement.priority) }}
+                                            ></div>
+                                            <div className="deadline-info">
+                                                <p className="deadline-title">
+                                                    <span style={{ marginRight: '0.5rem' }}>
+                                                        {getCategoryIcon(announcement.category)}
+                                                    </span>
+                                                    {announcement.title}
+                                                </p>
+                                                <span className="deadline-date">
+                                                    {announcement.event_date 
+                                                        ? new Date(announcement.event_date).toLocaleDateString() 
+                                                        : announcement.time_ago}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))
+                            )}
                         </div>
                     </GlassCard>
                 </div>

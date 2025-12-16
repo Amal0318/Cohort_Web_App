@@ -147,6 +147,10 @@
     box-shadow: 0 4px 12px rgba(247, 201, 72, 0.3);
 }
 
+.nav-item.active:hover {
+    color: white !important;
+}
+
 /* Stats Grid */
 .mentor-stats-grid {
     display: grid;

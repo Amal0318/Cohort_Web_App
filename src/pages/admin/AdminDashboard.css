@@ -88,7 +88,7 @@
 .action-btn {
     padding: 1rem 1.5rem;
     background: linear-gradient(135deg, #F7C948 0%, #E53935 100%);
-    color: white;
+    color: #fff;
     border: none;
     border-radius: 12px;
     font-size: 1rem;
@@ -98,6 +98,27 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(247, 201, 72, 0.5);
+    color: #fff !important;
+}
+
+/* Ensure all buttons maintain visible text on hover */
+button {
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    color: inherit !important;
+}
+
+button:hover span {
+    color: inherit !important;
+}
     transition: transform 0.2s, box-shadow 0.2s;
 }
 

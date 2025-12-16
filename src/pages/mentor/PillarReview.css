@@ -13,23 +13,21 @@
 }
 
 .pillar-review__title {
-    font-size: 2.5rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, var(--primary-gradient-start), var(--primary-gradient-end));
+    font-family: 'Sora', sans-serif;
+    font-size: 3rem;
+    font-weight: 800;
+    margin: 0 0 1rem 0;
+    background: linear-gradient(135deg, #F7C948 0%, #E53935 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    margin-bottom: 0.5rem;
-    margin-top: 0;
-    line-height: 1.2;
 }
 
 .pillar-review__subtitle {
+    font-family: 'Inter', sans-serif;
     font-size: 1.125rem;
+    margin: 0 0 1.5rem 0;
     color: var(--text-secondary);
-    font-weight: 400;
-    margin-top: 0;
-    margin-bottom: 1rem;
 }
 
 /* Pillar Tabs */
@@ -414,6 +412,12 @@
     background-position: right 0.75rem center;
     background-size: 16px;
     padding-right: 2.5rem;
+}
+
+.filter-select option {
+    background: #1a1a1a;
+    color: #ffffff;
+    padding: 0.75rem;
 }
 
 .filter-select:hover {

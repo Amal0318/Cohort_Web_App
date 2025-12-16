@@ -132,6 +132,10 @@
     background: rgba(103, 126, 234, 0.1);
 }
 
+.type-btn.active:hover {
+    color: #667eea !important;
+}
+
 .notification-textarea {
     width: 100%;
     padding: 1rem;

@@ -62,6 +62,10 @@
     box-shadow: 0 4px 12px rgba(247, 201, 72, 0.3);
 }
 
+.mentor-nav-item.active:hover {
+    color: #FFFFFF !important;
+}
+
 .nav-indicator {
     position: absolute;
     bottom: -1rem;

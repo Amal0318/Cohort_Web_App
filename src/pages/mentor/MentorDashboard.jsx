@@ -82,14 +82,12 @@ function MentorDashboard() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
             >
-                <div className="mentor-header-content">
-                    <h1>Student Dashboard</h1>
-                    <p>Monitor and review your students' progress</p>
-                </div>
+                <h1 className="mentor-title">Student Dashboard</h1>
+                <p className="mentor-subtitle">Monitor and review your students' progress</p>
                 <Button 
                     onClick={loadStudents} 
                     disabled={loading}
-                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                    className="refresh-button"
                 >
                     <RefreshCw size={16} className={loading ? 'spinning' : ''} />
                     Refresh

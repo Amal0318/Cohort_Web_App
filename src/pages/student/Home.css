@@ -51,6 +51,7 @@
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s;
+  color: #fff;
 }
 
 .profile-icon-btn:hover {
@@ -58,6 +59,26 @@
   border-color: rgba(247, 201, 72, 0.8);
   box-shadow: 0 4px 12px rgba(247, 201, 72, 0.5);
   transform: scale(1.05);
+}
+
+/* Hackathon and Announcement buttons */
+.hackathon-notif-btn {
+  transition: all 0.3s ease;
+}
+
+.hackathon-notif-btn:hover {
+  background: rgba(255, 193, 7, 0.2) !important;
+  border-color: rgba(255, 193, 7, 0.5) !important;
+  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3) !important;
+}
+
+.hackathon-notif-btn span {
+  color: var(--text-primary) !important;
+  transition: color 0.3s ease;
+}
+
+.hackathon-notif-btn:hover span {
+  color: var(--text-primary) !important;
 }
 
 /* Profile Modal */

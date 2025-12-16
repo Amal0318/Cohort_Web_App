@@ -126,8 +126,31 @@ function PillarReview() {
     const completionPercentage = Math.round(((stats.approved + stats.rejected) / stats.total) * 100);
 
     const handleReviewClick = (submission) => {
-        setSelectedSubmission(submission);
+        console.log('🔵 Review button clicked!');
+        console.log('📦 Submission data:', submission);
+        
+        // Transform submission data to match drawer expectations
+        const transformedSubmission = {
+            ...submission,
+            fullDescription: submission.description || submission.fullDescription || 'No description provided',
+            evidence: {
+                images: submission.evidence?.images || [],
+                links: submission.evidence?.links || []
+            },
+            timeline: submission.timeline || [],
+            student: {
+                ...submission.student,
+                avatar: submission.student?.avatar || '👤',
+                rollNo: submission.student?.rollNo || submission.student?.roll || 'N/A',
+                email: submission.student?.email || 'N/A',
+                phone: submission.student?.phone || 'N/A'
+            }
+        };
+        
+        console.log('📦 Transformed submission:', transformedSubmission);
+        setSelectedSubmission(transformedSubmission);
         setMentorComment('');
+        console.log('✅ selectedSubmission set');
     };
 
     const closeReviewDrawer = () => {
@@ -145,7 +168,7 @@ function PillarReview() {
             
             await reviewSubmission({
                 pillar: selectedSubmission.pillar,
-                submission_id: selectedSubmission.id,
+                submission_id: selectedSubmission.dbId,
                 submission_type: submissionType,
                 action: 'approve',
                 comment: mentorComment || 'Approved by mentor'
@@ -186,7 +209,7 @@ function PillarReview() {
             
             await reviewSubmission({
                 pillar: selectedSubmission.pillar,
-                submission_id: selectedSubmission.id,
+                submission_id: selectedSubmission.dbId,
                 submission_type: submissionType,
                 action: 'reject',
                 comment: mentorComment
@@ -575,6 +598,7 @@ function PillarReview() {
             </div>
 
             {/* Review Drawer */}
+            {console.log('🎨 Rendering check - selectedSubmission:', selectedSubmission)}
             {selectedSubmission && (
                 <>
                     <div className="drawer-overlay" onClick={closeReviewDrawer} />
@@ -682,7 +706,7 @@ function PillarReview() {
                                     <h3>Evidence</h3>
                                 </div>
                                 <div className="evidence-content">
-                                    {selectedSubmission.evidence.images.length > 0 && (
+                                    {selectedSubmission.evidence?.images?.length > 0 && (
                                         <div className="evidence-group">
                                             <span className="evidence-group-label">Images ({selectedSubmission.evidence.images.length})</span>
                                             <div className="evidence-items">
@@ -695,7 +719,7 @@ function PillarReview() {
                                             </div>
                                         </div>
                                     )}
-                                    {selectedSubmission.evidence.links.length > 0 && (
+                                    {selectedSubmission.evidence?.links?.length > 0 && (
                                         <div className="evidence-group">
                                             <span className="evidence-group-label">Links ({selectedSubmission.evidence.links.length})</span>
                                             <div className="evidence-items">
@@ -718,7 +742,8 @@ function PillarReview() {
                                     <h3>Submission Timeline</h3>
                                 </div>
                                 <div className="timeline-content">
-                                    {selectedSubmission.timeline.map((event, idx) => (
+                                    {selectedSubmission.timeline?.length > 0 ? (
+                                        selectedSubmission.timeline.map((event, idx) => (
                                         <div key={idx} className={`timeline-event timeline-event--${event.type}`}>
                                             <div className="timeline-dot" />
                                             <div className="timeline-info">
@@ -726,7 +751,10 @@ function PillarReview() {
                                                 <span className="timeline-date">{event.date}</span>
                                             </div>
                                         </div>
-                                    ))}
+                                    ))
+                                    ) : (
+                                        <p className="timeline-empty">No timeline events available</p>
+                                    )}
                                 </div>
                             </div>
 

@@ -12,24 +12,60 @@
 }
 
 .mentor-header {
+    position: relative;
     text-align: center;
-    margin-bottom: 2rem;
+    margin-bottom: 3rem;
+    z-index: 1;
 }
 
 .mentor-title {
-    font-size: 2.5rem;
-    font-weight: 700;
+    font-family: 'Sora', sans-serif;
+    font-size: 3rem;
+    font-weight: 800;
+    margin: 0 0 1rem 0;
     background: linear-gradient(135deg, #F7C948 0%, #E53935 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    margin-bottom: 0.5rem;
-    line-height: 1.2;
 }
 
 .mentor-subtitle {
-    font-size: 1.1rem;
-    opacity: 0.8;
+    font-family: 'Inter', sans-serif;
+    font-size: 1.125rem;
+    margin: 0 0 1.5rem 0;
+    color: var(--text-secondary);
+}
+
+.refresh-button {
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, #F7C948, #FFA726) !important;
+    color: #000 !important;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    box-shadow: 0 4px 12px rgba(247, 201, 72, 0.4);
+}
+
+.refresh-button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(247, 201, 72, 0.6);
+}
+
+.refresh-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+@keyframes spinning {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.spinning {
+    animation: spinning 1s linear infinite;
 }
 
 /* Students Panel - Left Side */

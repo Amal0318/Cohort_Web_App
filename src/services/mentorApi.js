@@ -44,6 +44,9 @@ export const getPillarSubmissions = async (pillar, filters = {}) => {
     if (filters.sort) {
         params.append('sort', filters.sort);
     }
+    if (filters.student_id) {
+        params.append('student_id', filters.student_id);
+    }
 
     const url = `${API_BASE_URL}/mentor/pillar/${pillar}/submissions/?${params.toString()}`;
     

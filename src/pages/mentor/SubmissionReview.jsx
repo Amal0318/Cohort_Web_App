@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Lightbulb, Heart, Trophy, Linkedin, Code, Filter, Search,
@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import GlassCard from '../../components/GlassCard';
 import Button from '../../components/Button';
+import { getPillarSubmissions } from '../../services/mentorApi';
 import './SubmissionReview.css';
 
 const PILLARS = [
@@ -32,81 +33,83 @@ function SubmissionReview({ selectedStudent }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedSubmission, setSelectedSubmission] = useState(null);
     const [reviewComment, setReviewComment] = useState('');
+    const [reviewStatus, setReviewStatus] = useState(null); // 'loading', 'success', 'error'
+    const [reviewMessage, setReviewMessage] = useState('');
+    const [submissions, setSubmissions] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    // Mock submissions data
-    const mockSubmissions = [
-        {
-            id: 1,
-            student: selectedStudent || { id: 1, name: 'Amal R', email: 'amal@student.com', rollNo: 'CS101' },
-            pillar: 'clt',
-            title: 'Full Stack Development Course',
-            platform: 'Coursera',
-            submittedDate: '2024-12-10',
-            status: 'pending',
-            evidence: 'https://drive.google.com/certificate/123',
-            description: 'Completed a comprehensive full-stack web development course covering React, Node.js, and MongoDB.',
-            duration: '40 hours',
-            completionDate: '2024-12-08',
-        },
-        {
-            id: 2,
-            student: selectedStudent || { id: 1, name: 'Amal R', email: 'amal@student.com', rollNo: 'CS101' },
-            pillar: 'cfc',
-            title: 'Smart India Hackathon 2024',
-            platform: 'Government of India',
-            submittedDate: '2024-12-09',
-            status: 'approved',
-            evidence: 'https://drive.google.com/certificate/456',
-            description: 'Participated in Smart India Hackathon and developed an AI-based solution for traffic management.',
-            mode: 'Online',
-            participationDate: '2024-11-15',
-        },
-        {
-            id: 3,
-            student: selectedStudent || { id: 1, name: 'Amal R', email: 'amal@student.com', rollNo: 'CS101' },
-            pillar: 'iipc',
-            title: 'LinkedIn Post Verification',
-            platform: 'LinkedIn',
-            submittedDate: '2024-12-08',
-            status: 'approved',
-            evidence: 'https://linkedin.com/posts/123',
-            description: 'Posted about recent tech trends and innovations in AI.',
-            totalPosts: 5,
-        },
-        {
-            id: 4,
-            student: selectedStudent || { id: 1, name: 'Amal R', email: 'amal@student.com', rollNo: 'CS101' },
-            pillar: 'scd',
-            title: 'LeetCode Daily Challenge',
-            platform: 'LeetCode',
-            submittedDate: '2024-12-07',
-            status: 'pending',
-            evidence: 'https://leetcode.com/profile/amal',
-            description: 'Completed 10 medium-level algorithm problems.',
-            problemsSolved: 10,
-        },
-        {
-            id: 5,
-            student: selectedStudent || { id: 1, name: 'Amal R', email: 'amal@student.com', rollNo: 'CS101' },
-            pillar: 'sri',
-            title: 'Community Beach Cleanup Drive',
-            platform: 'Local NGO',
-            submittedDate: '2024-12-05',
-            status: 'resubmit',
-            evidence: 'https://drive.google.com/photos/789',
-            description: 'Organized and participated in a beach cleanup drive with 50+ volunteers.',
-            hours: '4',
-            participants: 50,
-        },
-    ];
+    // Fetch real submissions from API
+    useEffect(() => {
+        if (selectedStudent) {
+            fetchSubmissions();
+        }
+    }, [selectedStudent, selectedPillar]);
+
+    const fetchSubmissions = async () => {
+        if (!selectedStudent) {
+            console.warn('⚠️ No student selected');
+            return;
+        }
+        
+        try {
+            setLoading(true);
+            setSubmissions([]); // Clear previous submissions
+            
+            console.log('🔍 Fetching submissions for student:', selectedStudent);
+            console.log('  - Full student object:', JSON.stringify(selectedStudent, null, 2));
+            
+            const studentId = selectedStudent.id;
+            if (!studentId) {
+                console.error('❌ No student ID found!');
+                setSubmissions([]);
+                return;
+            }
+            
+            console.log('  - Using student_id:', studentId);
+            console.log('  - Pillar:', selectedPillar);
+            
+            const data = await getPillarSubmissions(selectedPillar, {
+                status: 'all',
+                student_id: studentId
+            });
+            
+            console.log('📥 API Response:', data);
+            console.log('📋 Submissions count:', data.submissions?.length || 0);
+            
+            if (data.submissions && data.submissions.length > 0) {
+                console.log('✅ Found', data.submissions.length, 'submissions');
+                console.log('📌 First submission:', data.submissions[0]);
+                setSubmissions(data.submissions);
+            } else {
+                console.log('⚠️ No submissions found for this student');
+                setSubmissions([]);
+            }
+        } catch (error) {
+            console.error('❌ Error fetching submissions:', error);
+            console.error('Error details:', error.message);
+            setSubmissions([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Use only real submissions - no mock data fallback
+    const displaySubmissions = submissions;
+    
+    console.log('🎯 SubmissionReview State:');
+    console.log('  - submissions.length:', submissions.length);
+    console.log('  - loading:', loading);
+    console.log('  - selectedStudent:', selectedStudent?.name);
+    console.log('  - displaySubmissions:', displaySubmissions);
 
     // Filter submissions
-    const filteredSubmissions = mockSubmissions.filter(submission => {
+    const filteredSubmissions = displaySubmissions.filter(submission => {
         const pillarMatch = selectedPillar === 'all' || submission.pillar === selectedPillar;
         const statusMatch = selectedStatus === 'all' || submission.status === selectedStatus;
         const searchMatch = searchQuery === '' ||
-            submission.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            submission.platform.toLowerCase().includes(searchQuery.toLowerCase());
+            submission.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            submission.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            submission.platform?.toLowerCase().includes(searchQuery.toLowerCase());
         return pillarMatch && statusMatch && searchMatch;
     });
 
@@ -138,121 +141,419 @@ function SubmissionReview({ selectedStudent }) {
         );
     };
 
-    const handleReview = (submission, action) => {
-        console.log(`${action} submission:`, submission.id);
-        // Update submission status in real implementation
-        alert(`Submission ${action}!`);
-        setSelectedSubmission(null);
-        setReviewComment('');
+    const handleReview = async (submission, action) => {
+        console.log('🔵 handleReview called!');
+        console.log('  Submission:', submission);
+        console.log('  Action:', action);
+        console.log('  Comment:', reviewComment);
+        
+        if (!reviewComment.trim() && action !== 'Approved') {
+            setReviewMessage('Please add a comment for your review');
+            setTimeout(() => setReviewMessage(''), 3000);
+            return;
+        }
+
+        setReviewStatus('loading');
+        
+        // Map frontend action to backend action
+        const actionMap = {
+            'Approved': 'approve',
+            'Rejected': 'reject',
+            'Resubmission Requested': 'resubmit'
+        };
+        
+        const backendAction = actionMap[action];
+        
+        // Prepare the review payload
+        const reviewPayload = {
+            pillar: submission.pillar,
+            submission_id: submission.dbId || submission.id,
+            submission_type: submission.modelType || 'clt', // Default to clt for now
+            action: backendAction,
+            comment: reviewComment || 'No comment provided'
+        };
+        
+        console.log('📤 Sending review payload:', reviewPayload);
+        console.log('📋 Submission object:', submission);
+        
+        try {
+            const token = localStorage.getItem('accessToken');
+            console.log('🔑 Token exists:', !!token);
+            
+            const response = await fetch('http://127.0.0.1:8000/api/mentor/review/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(reviewPayload)
+            });
+            
+            console.log('📡 Response status:', response.status);
+            console.log('📡 Response ok:', response.ok);
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to submit review');
+            }
+            
+            const result = await response.json();
+            console.log(`✅ ${action} submission:`, submission.id, 'Response:', result);
+            console.log('🔄 Status changed from', submission.status, 'to', result.status);
+            
+            setReviewStatus('success');
+            setReviewMessage(`Submission ${action.toLowerCase()} successfully!`);
+            
+            console.log('🔃 Refreshing submissions...');
+            console.log('Current submissions count:', submissions.length);
+            
+            // Refresh submissions from API
+            await fetchSubmissions();
+            
+            console.log('✅ Submissions refreshed!');
+            console.log('New submissions count:', submissions.length);
+            
+            // Close modal after short delay
+            setTimeout(() => {
+                setSelectedSubmission(null);
+                setReviewComment('');
+                setReviewStatus(null);
+                setReviewMessage('');
+            }, 2000);
+        } catch (error) {
+            console.error('Review error:', error);
+            setReviewStatus('error');
+            setReviewMessage(error.message || 'Failed to submit review. Please try again.');
+            setTimeout(() => {
+                setReviewStatus(null);
+                setReviewMessage('');
+            }, 3000);
+        }
     };
 
     return (
         <div className="submission-review">
-            {/* Header */}
+            {/* Student Profile Overview */}
             <motion.div
-                className="review-header"
+                className="student-profile-overview"
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
             >
-                <div>
-                    <h1 className="review-title">Submission Review</h1>
-                    <p className="review-subtitle">
-                        {selectedStudent ? `Reviewing submissions for ${selectedStudent.name}` : 'Review student submissions'}
-                    </p>
-                </div>
-                <div className="submission-stats">
-                    <div className="stat-chip">
-                        <Clock size={16} />
-                        <span>{mockSubmissions.filter(s => s.status === 'pending').length} Pending</span>
-                    </div>
-                    <div className="stat-chip">
-                        <CheckCircle size={16} />
-                        <span>{mockSubmissions.filter(s => s.status === 'approved').length} Approved</span>
-                    </div>
-                </div>
-            </motion.div>
-
-            {/* Filters */}
-            <motion.div
-                className="review-filters"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-            >
                 <GlassCard>
-                    <div className="filters-container">
-                        {/* Pillar Filter */}
-                        <div className="filter-group">
-                            <label className="filter-label">Pillar</label>
-                            <div className="pillar-filter-buttons">
-                                {PILLARS.map(pillar => {
-                                    const Icon = pillar.icon;
-                                    return (
-                                        <button
-                                            key={pillar.id}
-                                            className={`pillar-filter-btn ${selectedPillar === pillar.id ? 'active' : ''}`}
-                                            onClick={() => setSelectedPillar(pillar.id)}
-                                            style={{ '--pillar-color': pillar.color }}
-                                        >
-                                            <Icon size={16} />
-                                            <span>{pillar.label}</span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
+                    <div className="profile-overview-content">
+                        <div className="profile-avatar-large">
+                            {selectedStudent.name.charAt(0)}
                         </div>
-
-                        {/* Status and Search */}
-                        <div className="filter-row">
-                            <div className="filter-group">
-                                <label className="filter-label">Status</label>
-                                <select
-                                    className="status-select"
-                                    value={selectedStatus}
-                                    onChange={(e) => setSelectedStatus(e.target.value)}
-                                >
-                                    {STATUS_OPTIONS.map(option => (
-                                        <option key={option.value} value={option.value}>
-                                            {option.label}
-                                        </option>
-                                    ))}
-                                </select>
+                        <div className="profile-details">
+                            <h2 className="profile-name">{selectedStudent.name}</h2>
+                            <p className="profile-roll">{selectedStudent.rollNo}</p>
+                            <p className="profile-email">{selectedStudent.email}</p>
+                        </div>
+                        <div className="profile-stats-grid">
+                            <div className="profile-stat-item">
+                                <div className="stat-value">{displaySubmissions.length}</div>
+                                <div className="stat-label">Total Submissions</div>
                             </div>
-
-                            <div className="filter-group search-group">
-                                <label className="filter-label">Search</label>
-                                <div className="search-input-wrapper">
-                                    <Search size={18} />
-                                    <input
-                                        type="text"
-                                        placeholder="Search by title or platform..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="search-input"
-                                    />
-                                </div>
+                            <div className="profile-stat-item pending">
+                                <div className="stat-value">{displaySubmissions.filter(s => s.status === 'pending').length}</div>
+                                <div className="stat-label">Pending Review</div>
+                            </div>
+                            <div className="profile-stat-item approved">
+                                <div className="stat-value">{displaySubmissions.filter(s => s.status === 'approved').length}</div>
+                                <div className="stat-label">Approved</div>
+                            </div>
+                            <div className="profile-stat-item rejected">
+                                <div className="stat-value">{displaySubmissions.filter(s => s.status === 'rejected').length}</div>
+                                <div className="stat-label">Rejected</div>
                             </div>
                         </div>
                     </div>
                 </GlassCard>
             </motion.div>
 
-            {/* Submissions Grid */}
+            {/* Submission Statistics Overview */}
             <motion.div
-                className="submissions-grid"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.2 }}
+                className="statistics-overview"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
             >
-                {filteredSubmissions.length === 0 ? (
+                <div className="stats-header">
+                    <h3 className="stats-title">Filter by Pillar</h3>
+                    <div className="stats-actions">
+                        <select
+                            className="compact-status-filter"
+                            value={selectedStatus}
+                            onChange={(e) => setSelectedStatus(e.target.value)}
+                        >
+                            {STATUS_OPTIONS.map(option => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
+                                </option>
+                            ))}
+                        </select>
+                        <div className="compact-search-box">
+                            <Search size={16} />
+                            <input
+                                type="text"
+                                placeholder="Search submissions..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                </div>
+                <div className="pillar-chips">
+                    {/* All Pillars Chip */}
+                    <button
+                        className={`pillar-chip ${selectedPillar === 'all' ? 'active' : ''}`}
+                        onClick={() => setSelectedPillar('all')}
+                    >
+                        <Filter size={18} />
+                        <div className="chip-content">
+                            <span className="chip-label">All Pillars</span>
+                            <div className="chip-stats">
+                                <span className="chip-total">{displaySubmissions.length}</span>
+                                {displaySubmissions.filter(s => s.status === 'pending').length > 0 && (
+                                    <span className="chip-pending">{displaySubmissions.filter(s => s.status === 'pending').length} pending</span>
+                                )}
+                            </div>
+                        </div>
+                    </button>
+                    
+                    {PILLARS.filter(p => p.id !== 'all').map(pillar => {
+                        const Icon = pillar.icon;
+                        const pillarSubmissions = displaySubmissions.filter(s => s.pillar === pillar.id);
+                        const pendingCount = pillarSubmissions.filter(s => s.status === 'pending').length;
+                        const isActive = selectedPillar === pillar.id;
+                        return (
+                            <button
+                                key={pillar.id}
+                                className={`pillar-chip ${isActive ? 'active' : ''}`}
+                                onClick={() => setSelectedPillar(pillar.id)}
+                                style={{ '--chip-color': pillar.color }}
+                            >
+                                <Icon size={18} />
+                                <div className="chip-content">
+                                    <span className="chip-label">{pillar.label}</span>
+                                    <div className="chip-stats">
+                                        <span className="chip-total">{pillarSubmissions.length}</span>
+                                        {pendingCount > 0 && (
+                                            <span className="chip-pending">{pendingCount} pending</span>
+                                        )}
+                                    </div>
+                                </div>
+                            </button>
+                        );
+                    })}
+                </div>
+            </motion.div>
+
+            {/* Review Card - Show when submission is selected */}
+            {selectedSubmission && (
+                <motion.div
+                    className="review-card-container"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 20 }}
+                >
                     <GlassCard>
-                        <div className="no-submissions">
-                            <FileText size={64} opacity={0.3} />
-                            <h3>No Submissions Found</h3>
-                            <p>Try adjusting your filters or check back later.</p>
+                        <div className="review-card-content">
+                            {/* Close Button */}
+                            <button
+                                className="review-close-btn"
+                                onClick={() => {
+                                    setSelectedSubmission(null);
+                                    setReviewComment('');
+                                    setReviewStatus(null);
+                                    setReviewMessage('');
+                                }}
+                                disabled={reviewStatus === 'loading'}
+                            >
+                                <XCircle size={20} />
+                            </button>
+
+                            {/* Status Messages */}
+                            {reviewMessage && (
+                                <motion.div
+                                    className={`review-alert review-alert-${reviewStatus}`}
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                >
+                                    {reviewStatus === 'success' && <CheckCircle size={18} />}
+                                    {reviewStatus === 'error' && <XCircle size={18} />}
+                                    {reviewStatus === null && <AlertCircle size={18} />}
+                                    <span>{reviewMessage}</span>
+                                </motion.div>
+                            )}
+
+                            {/* Card Header */}
+                            <div className="review-card-header">
+                                <div>
+                                    <div className="review-title-row">
+                                        {getPillarIcon(selectedSubmission.pillar)}
+                                        <h2>{selectedSubmission.title}</h2>
+                                    </div>
+                                    <p className="review-platform">{selectedSubmission.platform}</p>
+                                </div>
+                                {getStatusBadge(selectedSubmission.status)}
+                            </div>
+
+                            {/* Student Info */}
+                            <div className="review-section">
+                                <h3 className="review-section-title">
+                                    <User size={18} />
+                                    Student Information
+                                </h3>
+                                <div className="student-info-grid">
+                                    <div className="info-item">
+                                        <span className="info-label">Name</span>
+                                        <span className="info-value">{selectedSubmission.student.name}</span>
+                                    </div>
+                                    <div className="info-item">
+                                        <span className="info-label">Roll No</span>
+                                        <span className="info-value">{selectedSubmission.student.rollNo}</span>
+                                    </div>
+                                    <div className="info-item">
+                                        <span className="info-label">Email</span>
+                                        <span className="info-value">{selectedSubmission.student.email}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Submission Details */}
+                            <div className="review-section">
+                                <h3 className="review-section-title">
+                                    <FileText size={18} />
+                                    Submission Details
+                                </h3>
+                                <div className="detail-grid">
+                                    <div className="detail-item">
+                                        <span className="detail-label">Submitted On</span>
+                                        <span className="detail-value">
+                                            {new Date(selectedSubmission.submittedDate).toLocaleDateString('en-US', {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric'
+                                            })}
+                                        </span>
+                                    </div>
+                                    {selectedSubmission.duration && (
+                                        <div className="detail-item">
+                                            <span className="detail-label">Duration</span>
+                                            <span className="detail-value">{selectedSubmission.duration}</span>
+                                        </div>
+                                    )}
+                                    {selectedSubmission.mode && (
+                                        <div className="detail-item">
+                                            <span className="detail-label">Mode</span>
+                                            <span className="detail-value">{selectedSubmission.mode}</span>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="detail-description">
+                                    <span className="detail-label">Description</span>
+                                    <p className="detail-value">{selectedSubmission.description}</p>
+                                </div>
+                                <a
+                                    href={selectedSubmission.evidence}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="evidence-link"
+                                >
+                                    <ExternalLink size={16} />
+                                    <span>View Evidence / Certificate</span>
+                                </a>
+                            </div>
+
+                            {/* Review Actions */}
+                            <div className="review-section">
+                                <h3 className="review-section-title">
+                                    <MessageSquare size={18} />
+                                    Mentor Review & Feedback
+                                </h3>
+                                <textarea
+                                    className="review-textarea"
+                                    placeholder="Add your feedback or comments for the student... (Required for reject/resubmit)"
+                                    value={reviewComment}
+                                    onChange={(e) => setReviewComment(e.target.value)}
+                                    rows={4}
+                                    disabled={reviewStatus === 'loading'}
+                                />
+                                <p className="review-hint">
+                                    Your feedback will be sent to the student along with your decision.
+                                </p>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="review-actions">
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => handleReview(selectedSubmission, 'Rejected')}
+                                    className="reject-btn"
+                                    disabled={reviewStatus === 'loading'}
+                                >
+                                    {reviewStatus === 'loading' ? (
+                                        <>
+                                            <Clock size={16} className="spinning" />
+                                            <span>Processing...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <XCircle size={16} />
+                                            <span>Reject</span>
+                                        </>
+                                    )}
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => handleReview(selectedSubmission, 'Resubmission Requested')}
+                                    className="resubmit-btn"
+                                    disabled={reviewStatus === 'loading'}
+                                >
+                                    <AlertCircle size={16} />
+                                    <span>Request Resubmission</span>
+                                </Button>
+                                <Button
+                                    variant="primary"
+                                    onClick={() => handleReview(selectedSubmission, 'Approved')}
+                                    className="approve-btn"
+                                    disabled={reviewStatus === 'loading'}
+                                >
+                                    <CheckCircle size={16} />
+                                    <span>Approve</span>
+                                </Button>
+                            </div>
                         </div>
                     </GlassCard>
-                ) : (
+                </motion.div>
+            )}
+
+            {/* Submissions Grid */}
+            {!selectedSubmission && (
+                <motion.div
+                    className="submissions-grid"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                >
+                    {loading ? (
+                        <GlassCard>
+                            <div className="no-submissions">
+                                <Clock size={64} opacity={0.3} className="spinning" />
+                                <h3>Loading Submissions...</h3>
+                                <p>Fetching data from server...</p>
+                            </div>
+                        </GlassCard>
+                    ) : filteredSubmissions.length === 0 ? (
+                        <GlassCard>
+                            <div className="no-submissions">
+                                <FileText size={64} opacity={0.3} />
+                                <h3>No Submissions Found</h3>
+                                <p>This student hasn't submitted anything for {selectedPillar === 'all' ? 'any pillar' : selectedPillar.toUpperCase()} yet.</p>
+                            </div>
+                        </GlassCard>
+                    ) : (
                     filteredSubmissions.map((submission, index) => (
                         <motion.div
                             key={submission.id}
@@ -263,44 +564,57 @@ function SubmissionReview({ selectedStudent }) {
                             <GlassCard hoverable>
                                 <div className="submission-card">
                                     <div className="submission-card-header">
-                                        {getPillarIcon(submission.pillar)}
-                                        <div className="submission-info">
-                                            <h3 className="submission-title">{submission.title}</h3>
-                                            <p className="submission-platform">{submission.platform}</p>
+                                        <div className="submission-header-left">
+                                            {getPillarIcon(submission.pillar)}
+                                            <div className="submission-info">
+                                                <h3 className="submission-title">{submission.title}</h3>
+                                                <p className="submission-platform">
+                                                    <ExternalLink size={12} />
+                                                    {submission.platform}
+                                                </p>
+                                            </div>
                                         </div>
                                         {getStatusBadge(submission.status)}
                                     </div>
 
                                     <p className="submission-description">{submission.description}</p>
 
-                                    <div className="submission-meta">
-                                        <div className="meta-item">
-                                            <Calendar size={14} />
-                                            <span>{new Date(submission.submittedDate).toLocaleDateString()}</span>
-                                        </div>
-                                        {submission.duration && (
+                                    <div className="submission-footer">
+                                        <div className="submission-meta">
                                             <div className="meta-item">
-                                                <Clock size={14} />
-                                                <span>{submission.duration}</span>
+                                                <Calendar size={14} />
+                                                <span>{new Date(submission.submittedDate).toLocaleDateString()}</span>
                                             </div>
-                                        )}
-                                        <div className="meta-item">
-                                            <ExternalLink size={14} />
-                                            <a href={submission.evidence} target="_blank" rel="noopener noreferrer">
-                                                View Evidence
-                                            </a>
+                                            {submission.duration && (
+                                                <div className="meta-item">
+                                                    <Clock size={14} />
+                                                    <span>{submission.duration}</span>
+                                                </div>
+                                            )}
                                         </div>
-                                    </div>
-
-                                    <div className="submission-actions">
-                                        <Button
-                                            variant="primary"
-                                            size="small"
-                                            onClick={() => setSelectedSubmission(submission)}
-                                        >
-                                            <Eye size={16} />
-                                            <span>Review</span>
-                                        </Button>
+                                        <div className="submission-actions">
+                                            <Button
+                                                variant="secondary"
+                                                size="small"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    window.open(submission.evidence, '_blank');
+                                                }}
+                                                style={{ gap: '0.5rem' }}
+                                            >
+                                                <ExternalLink size={14} />
+                                                <span>Evidence</span>
+                                            </Button>
+                                            <Button
+                                                variant="primary"
+                                                size="small"
+                                                onClick={() => setSelectedSubmission(submission)}
+                                                style={{ gap: '0.5rem' }}
+                                            >
+                                                <Eye size={14} />
+                                                <span>Review</span>
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
                             </GlassCard>
@@ -308,153 +622,7 @@ function SubmissionReview({ selectedStudent }) {
                     ))
                 )}
             </motion.div>
-
-            {/* Review Modal */}
-            <AnimatePresence>
-                {selectedSubmission && (
-                    <motion.div
-                        className="modal-overlay"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onClick={() => setSelectedSubmission(null)}
-                    >
-                        <motion.div
-                            className="review-modal"
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <GlassCard>
-                                <div className="modal-content">
-                                    {/* Modal Header */}
-                                    <div className="modal-header">
-                                        <div>
-                                            <div className="modal-title-row">
-                                                {getPillarIcon(selectedSubmission.pillar)}
-                                                <h2>{selectedSubmission.title}</h2>
-                                            </div>
-                                            <p className="modal-platform">{selectedSubmission.platform}</p>
-                                        </div>
-                                        {getStatusBadge(selectedSubmission.status)}
-                                    </div>
-
-                                    {/* Student Info */}
-                                    <div className="modal-section">
-                                        <h3 className="section-title">
-                                            <User size={18} />
-                                            Student Information
-                                        </h3>
-                                        <div className="student-info-grid">
-                                            <div className="info-item">
-                                                <span className="info-label">Name</span>
-                                                <span className="info-value">{selectedSubmission.student.name}</span>
-                                            </div>
-                                            <div className="info-item">
-                                                <span className="info-label">Roll No</span>
-                                                <span className="info-value">{selectedSubmission.student.rollNo}</span>
-                                            </div>
-                                            <div className="info-item">
-                                                <span className="info-label">Email</span>
-                                                <span className="info-value">{selectedSubmission.student.email}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Submission Details */}
-                                    <div className="modal-section">
-                                        <h3 className="section-title">
-                                            <FileText size={18} />
-                                            Submission Details
-                                        </h3>
-                                        <div className="detail-grid">
-                                            <div className="detail-item">
-                                                <span className="detail-label">Submitted On</span>
-                                                <span className="detail-value">
-                                                    {new Date(selectedSubmission.submittedDate).toLocaleDateString('en-US', {
-                                                        year: 'numeric',
-                                                        month: 'long',
-                                                        day: 'numeric'
-                                                    })}
-                                                </span>
-                                            </div>
-                                            {selectedSubmission.duration && (
-                                                <div className="detail-item">
-                                                    <span className="detail-label">Duration</span>
-                                                    <span className="detail-value">{selectedSubmission.duration}</span>
-                                                </div>
-                                            )}
-                                            {selectedSubmission.mode && (
-                                                <div className="detail-item">
-                                                    <span className="detail-label">Mode</span>
-                                                    <span className="detail-value">{selectedSubmission.mode}</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="detail-description">
-                                            <span className="detail-label">Description</span>
-                                            <p className="detail-value">{selectedSubmission.description}</p>
-                                        </div>
-                                        <a
-                                            href={selectedSubmission.evidence}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="evidence-link"
-                                        >
-                                            <ExternalLink size={16} />
-                                            <span>View Evidence / Certificate</span>
-                                        </a>
-                                    </div>
-
-                                    {/* Review Actions */}
-                                    <div className="modal-section">
-                                        <h3 className="section-title">
-                                            <MessageSquare size={18} />
-                                            Mentor Review
-                                        </h3>
-                                        <textarea
-                                            className="review-textarea"
-                                            placeholder="Add your feedback or comments for the student..."
-                                            value={reviewComment}
-                                            onChange={(e) => setReviewComment(e.target.value)}
-                                            rows={4}
-                                        />
-                                    </div>
-
-                                    {/* Action Buttons */}
-                                    <div className="modal-actions">
-                                        <Button
-                                            variant="secondary"
-                                            onClick={() => handleReview(selectedSubmission, 'Rejected')}
-                                            className="reject-btn"
-                                        >
-                                            <XCircle size={16} />
-                                            <span>Reject</span>
-                                        </Button>
-                                        <Button
-                                            variant="secondary"
-                                            onClick={() => handleReview(selectedSubmission, 'Resubmission Requested')}
-                                            className="resubmit-btn"
-                                        >
-                                            <AlertCircle size={16} />
-                                            <span>Request Resubmission</span>
-                                        </Button>
-                                        <Button
-                                            variant="primary"
-                                            onClick={() => handleReview(selectedSubmission, 'Approved')}
-                                            className="approve-btn"
-                                        >
-                                            <CheckCircle size={16} />
-                                            <span>Approve</span>
-                                        </Button>
-                                    </div>
-                                </div>
-                            </GlassCard>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            )}
         </div>
     );
 }

@@ -11,7 +11,7 @@
 }
 
 [data-theme='dark'] .app {
-  background-color: #000000;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
   color: #FFFFFF;
 }
 
@@ -133,6 +133,10 @@
   background: linear-gradient(135deg, #F7C948 0%, #E53935 100%);
   color: #000000 !important;
   box-shadow: 0 4px 12px rgba(247, 201, 72, 0.3);
+}
+
+.nav-link--active:hover {
+  color: #FFFFFF !important;
 }
 
 .nav-link-indicator {

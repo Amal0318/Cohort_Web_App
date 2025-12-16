@@ -41,7 +41,7 @@
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s;
-  color: #000000;
+  color: #fff;
 }
 
 .profile-icon-btn:hover {
@@ -49,6 +49,20 @@
   border-color: rgba(247, 201, 72, 0.8);
   box-shadow: 0 4px 12px rgba(247, 201, 72, 0.5);
   transform: scale(1.05);
+  color: #fff;
+}
+
+/* Ensure all buttons maintain visible text on hover */
+button {
+  transition: all 0.3s ease;
+}
+
+button:hover {
+  color: inherit !important;
+}
+
+button:hover span {
+  color: inherit !important;
 }
 
 /* Profile Modal */

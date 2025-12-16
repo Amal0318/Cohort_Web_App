@@ -5,13 +5,14 @@ import { Link } from 'react-router-dom';
 import {
   Lightbulb, Heart, Trophy, Linkedin, Code,
   User, Mail, Phone, Users, Bell, Clock,
-  CheckCircle, XCircle, AlertCircle, FileText, Settings, Loader2, Calendar
+  CheckCircle, XCircle, AlertCircle, FileText, Settings, Loader2, Calendar, Megaphone
 } from 'lucide-react';
 import GlassCard from '../../components/GlassCard';
 import Button from '../../components/Button';
 import { useAuth } from '../../context/AuthContext';
 import dashboardService from '../../services/dashboard';
 import { getUpcomingHackathons } from '../../services/cfc';
+import { getStudentAnnouncements, markAnnouncementAsRead } from '../../services/announcements';
 import './Home.css';
 
 const PILLARS = [
@@ -66,6 +67,9 @@ export const HomePage = () => {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [upcomingHackathons, setUpcomingHackathons] = useState([]);
   const [showHackathonModal, setShowHackathonModal] = useState(false);
+  const [announcements, setAnnouncements] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showAnnouncementsModal, setShowAnnouncementsModal] = useState(false);
 
   useEffect(() => {
     document.title = 'Dashboard | Cohort Web';
@@ -80,10 +84,12 @@ export const HomePage = () => {
     
     fetchDashboardData();
     fetchHackathons();
+    fetchAnnouncements();
 
     // Set up auto-refresh every 30 seconds
     const refreshInterval = setInterval(() => {
       fetchDashboardData(true); // Silent refresh
+      fetchAnnouncements(true);
     }, 30000);
 
     // Cleanup interval on unmount
@@ -98,6 +104,30 @@ export const HomePage = () => {
       setUpcomingHackathons(data);
     } catch (err) {
       console.error('Failed to fetch hackathons:', err);
+    }
+  };
+
+  const fetchAnnouncements = async (silent = false) => {
+    try {
+      const data = await getStudentAnnouncements();
+      setAnnouncements(data.announcements || []);
+      setUnreadCount(data.unread_count || 0);
+    } catch (err) {
+      console.error('Failed to fetch announcements:', err);
+      if (!silent) {
+        setAnnouncements([]);
+        setUnreadCount(0);
+      }
+    }
+  };
+
+  const handleMarkAsRead = async (announcementId) => {
+    try {
+      await markAnnouncementAsRead(announcementId);
+      // Refresh announcements to update read status
+      await fetchAnnouncements(true);
+    } catch (err) {
+      console.error('Failed to mark announcement as read:', err);
     }
   };
 
@@ -278,17 +308,38 @@ export const HomePage = () => {
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: '600px' }}
+            style={{ maxWidth: '650px', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}
           >
             <GlassCard>
-              <div className="profile-modal-content">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+              <div className="profile-modal-content" style={{ display: 'flex', flexDirection: 'column', maxHeight: '80vh' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', paddingBottom: '1rem', borderBottom: '2px solid rgba(255, 193, 7, 0.2)' }}>
                   <Trophy size={32} style={{ color: '#FFC107' }} />
-                  <h2 style={{ margin: 0 }}>Upcoming Hackathons</h2>
+                  <h2 style={{ margin: 0, fontSize: '1.75rem', fontWeight: '700' }}>Upcoming Hackathons</h2>
+                  {upcomingHackathons.length > 0 && (
+                    <span style={{
+                      marginLeft: 'auto',
+                      padding: '0.35rem 0.85rem',
+                      background: 'rgba(255, 193, 7, 0.2)',
+                      color: '#FFC107',
+                      borderRadius: '20px',
+                      fontSize: '0.9rem',
+                      fontWeight: '700'
+                    }}>
+                      {upcomingHackathons.length} Event{upcomingHackathons.length !== 1 ? 's' : ''}
+                    </span>
+                  )}
                 </div>
                 
                 {upcomingHackathons.length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    gap: '1rem',
+                    overflowY: 'auto',
+                    maxHeight: '500px',
+                    padding: '1rem 0.25rem',
+                    marginTop: '1rem'
+                  }}>
                     {upcomingHackathons.map((hackathon) => {
                       const daysLeft = hackathon.days_until_event;
                       const isUrgent = daysLeft <= 3;
@@ -299,43 +350,48 @@ export const HomePage = () => {
                       
                       return (
                         <div key={hackathon.id} style={{
-                          padding: '1rem',
-                          background: 'rgba(255, 255, 255, 0.03)',
-                          borderRadius: '12px',
-                          border: `2px solid ${isUrgent ? '#ff4757' : 'rgba(255, 193, 7, 0.3)'}`,
-                          transition: 'all 0.3s ease'
+                          padding: '1.25rem',
+                          background: isUrgent ? 'rgba(255, 71, 87, 0.08)' : 'rgba(255, 255, 255, 0.03)',
+                          borderRadius: '14px',
+                          border: `2px solid ${isUrgent ? 'rgba(255, 71, 87, 0.4)' : 'rgba(255, 193, 7, 0.3)'}`,
+                          transition: 'all 0.3s ease',
+                          boxShadow: isUrgent ? '0 4px 12px rgba(255, 71, 87, 0.15)' : '0 2px 8px rgba(0, 0, 0, 0.1)'
                         }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.75rem' }}>
-                            <strong style={{ fontSize: '1.1rem', color: 'var(--text-primary)' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.85rem' }}>
+                            <strong style={{ fontSize: '1.15rem', color: 'var(--text-primary)', lineHeight: '1.3', flex: 1 }}>
                               {hackathon.hackathon_name}
                             </strong>
                             <span style={{
-                              padding: '0.3rem 0.75rem',
-                              background: isUrgent ? 'rgba(255, 71, 87, 0.15)' : 'rgba(255, 193, 7, 0.15)',
+                              padding: '0.4rem 0.85rem',
+                              background: isUrgent ? 'rgba(255, 71, 87, 0.2)' : 'rgba(255, 193, 7, 0.2)',
                               color: isUrgent ? '#ff4757' : '#FFC107',
-                              borderRadius: '6px',
+                              borderRadius: '8px',
                               fontSize: '0.85rem',
                               fontWeight: '700',
                               whiteSpace: 'nowrap',
-                              marginLeft: '1rem'
+                              marginLeft: '1rem',
+                              border: `1px solid ${isUrgent ? 'rgba(255, 71, 87, 0.3)' : 'rgba(255, 193, 7, 0.3)'}`
                             }}>
-                              {daysLeft === 0 ? 'Today!' : daysLeft === 1 ? 'Tomorrow' : `${daysLeft} days`}
+                              {daysLeft === 0 ? '🔴 Today!' : daysLeft === 1 ? '🟠 Tomorrow' : `⏰ ${daysLeft} days`}
                             </span>
                           </div>
-                          <p style={{ margin: '0.5rem 0', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
-                            <Calendar size={16} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} />
-                            {new Date(hackathon.participation_date).toLocaleDateString('en-US', { 
-                              weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
-                            })} • {hackathon.mode}
+                          <p style={{ margin: '0.65rem 0', fontSize: '0.95rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Calendar size={16} style={{ color: '#FFC107', flexShrink: 0 }} />
+                            <span>
+                              {new Date(hackathon.participation_date).toLocaleDateString('en-US', { 
+                                weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
+                              })} • {hackathon.mode}
+                            </span>
                           </p>
                           <p style={{ 
-                            margin: '0.75rem 0 0 0', 
-                            fontSize: '0.95rem', 
+                            margin: '0.85rem 0 0 0', 
+                            fontSize: '0.9rem', 
                             color: 'var(--text-primary)',
-                            fontWeight: '500',
-                            padding: '0.5rem',
-                            background: isUrgent ? 'rgba(255, 71, 87, 0.05)' : 'rgba(255, 193, 7, 0.05)',
-                            borderRadius: '6px'
+                            fontWeight: '600',
+                            padding: '0.65rem 0.85rem',
+                            background: isUrgent ? 'rgba(255, 71, 87, 0.1)' : 'rgba(255, 193, 7, 0.1)',
+                            borderRadius: '8px',
+                            borderLeft: `3px solid ${isUrgent ? '#ff4757' : '#FFC107'}`
                           }}>
                             {motivationMsg}
                           </p>
@@ -345,12 +401,27 @@ export const HomePage = () => {
                               target="_blank" 
                               rel="noopener noreferrer"
                               style={{
-                                display: 'inline-block',
-                                marginTop: '0.75rem',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                marginTop: '0.85rem',
+                                padding: '0.5rem 1rem',
+                                background: 'rgba(255, 193, 7, 0.15)',
+                                border: '1px solid rgba(255, 193, 7, 0.3)',
+                                borderRadius: '8px',
                                 color: '#FFC107',
                                 textDecoration: 'none',
                                 fontSize: '0.9rem',
-                                fontWeight: '500'
+                                fontWeight: '600',
+                                transition: 'all 0.2s ease'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.target.style.background = 'rgba(255, 193, 7, 0.25)';
+                                e.target.style.transform = 'translateX(4px)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.target.style.background = 'rgba(255, 193, 7, 0.15)';
+                                e.target.style.transform = 'translateX(0)';
                               }}
                             >
                               View Details →
@@ -363,17 +434,174 @@ export const HomePage = () => {
                 ) : (
                   <div style={{ 
                     textAlign: 'center', 
+                    padding: '3rem 2rem',
+                    color: 'var(--text-secondary)'
+                  }}>
+                    <Trophy size={64} style={{ color: 'rgba(255, 193, 7, 0.3)', marginBottom: '1.5rem' }} />
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>No upcoming hackathons registered yet</h3>
+                    <p style={{ fontSize: '0.95rem', marginTop: '0.75rem' }}>Go to CFC page to register for exciting hackathons!</p>
+                  </div>
+                )}
+                
+                <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '2px solid rgba(255, 255, 255, 0.05)', textAlign: 'center' }}>
+                  <Button onClick={() => setShowHackathonModal(false)} style={{ minWidth: '150px' }}>
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </GlassCard>
+          </motion.div>
+        </motion.div>
+      )}
+
+      {/* Announcements Modal */}
+      {showAnnouncementsModal && (
+        <motion.div
+          className="profile-modal-overlay"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          onClick={() => setShowAnnouncementsModal(false)}
+        >
+          <motion.div
+            className="profile-modal"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '700px' }}
+          >
+            <GlassCard>
+              <div className="profile-modal-content">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                  <Megaphone size={32} style={{ color: '#F7C948' }} />
+                  <h2 style={{ margin: 0 }}>Announcements from Mentor</h2>
+                </div>
+                
+                {announcements.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '500px', overflowY: 'auto' }}>
+                    {announcements.map((announcement) => {
+                      const getCategoryColor = (category) => {
+                        const colors = {
+                          general: '#6b7280',
+                          event: '#8b5cf6',
+                          deadline: '#ef4444',
+                          important: '#f59e0b',
+                          reminder: '#10b981'
+                        };
+                        return colors[category] || colors.general;
+                      };
+
+                      const getPriorityLabel = (priority) => {
+                        return priority === 'high' ? '🔴 High' : priority === 'medium' ? '🟠 Medium' : '🟢 Low';
+                      };
+                      
+                      return (
+                        <div key={announcement.id} style={{
+                          padding: '1.25rem',
+                          background: announcement.is_read ? 'rgba(255, 255, 255, 0.02)' : 'rgba(247, 201, 72, 0.05)',
+                          borderRadius: '12px',
+                          border: `2px solid ${announcement.is_read ? getCategoryColor(announcement.category) + '20' : getCategoryColor(announcement.category) + '40'}`,
+                          transition: 'all 0.3s ease',
+                          opacity: announcement.is_read ? 0.7 : 1
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.75rem' }}>
+                            <div style={{ flex: 1 }}>
+                              <strong style={{ fontSize: '1.15rem', color: 'var(--text-primary)' }}>
+                                {!announcement.is_read && <span style={{ color: '#F7C948', marginRight: '0.5rem' }}>●</span>}
+                                {announcement.title}
+                              </strong>
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginLeft: '1rem' }}>
+                              <span style={{
+                                padding: '0.25rem 0.65rem',
+                                background: `${getCategoryColor(announcement.category)}20`,
+                                color: getCategoryColor(announcement.category),
+                                borderRadius: '6px',
+                                fontSize: '0.75rem',
+                                fontWeight: '700',
+                                textTransform: 'uppercase',
+                                whiteSpace: 'nowrap'
+                              }}>
+                                {announcement.category}
+                              </span>
+                              <span style={{
+                                padding: '0.25rem 0.65rem',
+                                background: 'rgba(255, 255, 255, 0.1)',
+                                color: 'var(--text-secondary)',
+                                borderRadius: '6px',
+                                fontSize: '0.75rem',
+                                fontWeight: '600',
+                                whiteSpace: 'nowrap'
+                              }}>
+                                {getPriorityLabel(announcement.priority)}
+                              </span>
+                            </div>
+                          </div>
+                          <p style={{ margin: '0.75rem 0', fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
+                            {announcement.description}
+                          </p>
+                          {announcement.event_date && (
+                            <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                              <Calendar size={16} style={{ verticalAlign: 'middle', marginRight: '0.5rem', color: '#F7C948' }} />
+                              {new Date(announcement.event_date).toLocaleDateString('en-US', { 
+                                weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
+                              })}
+                            </p>
+                          )}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem' }}>
+                            <p style={{ 
+                              margin: 0, 
+                              fontSize: '0.8rem', 
+                              color: 'var(--text-secondary)',
+                              fontStyle: 'italic'
+                            }}>
+                              Posted {announcement.time_ago}
+                            </p>
+                            {!announcement.is_read && (
+                              <button
+                                onClick={() => handleMarkAsRead(announcement.id)}
+                                style={{
+                                  padding: '0.4rem 0.9rem',
+                                  background: 'rgba(247, 201, 72, 0.2)',
+                                  border: '1px solid rgba(247, 201, 72, 0.4)',
+                                  borderRadius: '8px',
+                                  color: '#F7C948',
+                                  fontSize: '0.8rem',
+                                  fontWeight: '600',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.target.style.background = 'rgba(247, 201, 72, 0.3)';
+                                  e.target.style.transform = 'translateY(-2px)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.target.style.background = 'rgba(247, 201, 72, 0.2)';
+                                  e.target.style.transform = 'translateY(0)';
+                                }}
+                              >
+                                <CheckCircle size={14} style={{ verticalAlign: 'middle', marginRight: '0.3rem' }} />
+                                Mark as Read
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div style={{ 
+                    textAlign: 'center', 
                     padding: '2rem',
                     color: 'var(--text-secondary)'
                   }}>
-                    <Trophy size={48} style={{ color: 'var(--border-color)', marginBottom: '1rem' }} />
-                    <p>No upcoming hackathons registered yet.</p>
-                    <p style={{ fontSize: '0.9rem', marginTop: '0.5rem' }}>Go to CFC page to register for hackathons!</p>
+                    <Megaphone size={48} style={{ color: 'var(--border-color)', marginBottom: '1rem' }} />
+                    <p>No announcements yet.</p>
+                    <p style={{ fontSize: '0.9rem', marginTop: '0.5rem' }}>Your mentor hasn't posted any announcements.</p>
                   </div>
                 )}
                 
                 <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-                  <Button onClick={() => setShowHackathonModal(false)}>
+                  <Button onClick={() => setShowAnnouncementsModal(false)}>
                     Close
                   </Button>
                 </div>
@@ -437,6 +665,47 @@ export const HomePage = () => {
                 fontWeight: 'bold'
               }}>
                 {upcomingHackathons.length}
+              </span>
+            )}
+          </motion.button>
+
+          {/* Announcements Button */}
+          <motion.button
+            className="hackathon-notif-btn"
+            onClick={() => setShowAnnouncementsModal(true)}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.6rem 1rem',
+              background: 'rgba(247, 201, 72, 0.1)',
+              border: '1px solid rgba(247, 201, 72, 0.3)',
+              borderRadius: '12px',
+              cursor: 'pointer',
+              position: 'relative'
+            }}
+          >
+            <Megaphone size={20} style={{ color: '#F7C948' }} />
+            <span style={{ color: 'var(--text-primary)', fontWeight: '500', fontSize: '0.9rem' }}>Announcements</span>
+            {unreadCount > 0 && (
+              <span style={{
+                position: 'absolute',
+                top: '-6px',
+                right: '-6px',
+                background: '#F7C948',
+                color: '#000',
+                borderRadius: '50%',
+                width: '20px',
+                height: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.7rem',
+                fontWeight: 'bold'
+              }}>
+                {unreadCount}
               </span>
             )}
           </motion.button>
