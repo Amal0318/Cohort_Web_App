@@ -354,13 +354,13 @@ class NotificationListView(APIView):
     
     def get(self, request):
         """Get all notifications for the current user"""
-        notifications = Notification.objects.filter(user=request.user)[:50]
+        notifications = Notification.objects.filter(recipient=request.user)[:50]
         serializer = NotificationSerializer(notifications, many=True)
         return Response(serializer.data)
     
     def delete(self, request):
         """Delete all read notifications"""
-        deleted_count = Notification.objects.filter(user=request.user, is_read=True).delete()[0]
+        deleted_count = Notification.objects.filter(recipient=request.user, is_read=True).delete()[0]
         return Response({
             'message': f'Deleted {deleted_count} notification(s)',
             'count': deleted_count
@@ -374,7 +374,7 @@ class NotificationMarkReadView(APIView):
     def post(self, request, pk):
         """Mark a specific notification as read"""
         try:
-            notification = Notification.objects.get(pk=pk, user=request.user)
+            notification = Notification.objects.get(pk=pk, recipient=request.user)
             notification.is_read = True
             notification.save()
             return Response({'status': 'marked as read'})
@@ -387,7 +387,7 @@ class NotificationMarkReadView(APIView):
     def delete(self, request, pk):
         """Delete a specific notification"""
         try:
-            notification = Notification.objects.get(pk=pk, user=request.user)
+            notification = Notification.objects.get(pk=pk, recipient=request.user)
             notification.delete()
             return Response({'status': 'notification deleted'})
         except Notification.DoesNotExist:

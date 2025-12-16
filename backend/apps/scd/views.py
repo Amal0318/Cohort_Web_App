@@ -75,15 +75,20 @@ class LeetCodeProfileViewSet(viewsets.ModelViewSet):
         
         if not profile_data:
             return Response(
-                {'error': 'Failed to fetch LeetCode profile. Please check the username.'},
+                {'error': 'Failed to fetch LeetCode profile. Please check the username and try again.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Fetch contest info
-        contest_info = LeetCodeAPI.fetch_contest_info(username)
+        # Fetch additional data (non-critical, can timeout)
+        warnings = []
         
-        # Fetch calendar data (streak and monthly problems)
+        contest_info = LeetCodeAPI.fetch_contest_info(username)
+        if not contest_info:
+            warnings.append('Contest data unavailable - LeetCode API timeout or no contest history')
+        
         calendar_data = LeetCodeAPI.fetch_calendar_data(username)
+        if not calendar_data:
+            warnings.append('Calendar data unavailable - LeetCode API timeout')
         
         try:
             with transaction.atomic():
@@ -157,24 +162,31 @@ class LeetCodeProfileViewSet(viewsets.ModelViewSet):
                     ranking=profile_data['ranking']
                 )
                 
-                # Fetch and save recent submissions
+                # Fetch and save recent submissions (non-critical)
                 recent_submissions = LeetCodeAPI.fetch_recent_submissions(username, limit=20)
+                if not recent_submissions:
+                    warnings.append('Recent submissions unavailable - LeetCode API timeout')
                 
                 # Clear old submissions and add new ones
-                profile.submissions.all().delete()
+                if recent_submissions:
+                    profile.submissions.all().delete()
+                    for sub_data in recent_submissions:
+                        LeetCodeSubmission.objects.create(
+                            profile=profile,
+                            **sub_data
+                        )
                 
-                for sub_data in recent_submissions:
-                    LeetCodeSubmission.objects.create(
-                        profile=profile,
-                        **sub_data
-                    )
-                
-                # Return updated profile
+                # Return updated profile with warnings
                 output_serializer = LeetCodeProfileSerializer(profile)
-                return Response({
-                    'message': 'Profile synced successfully',
+                response_data = {
+                    'message': 'Profile synced successfully' + (' with warnings' if warnings else ''),
                     'profile': output_serializer.data
-                }, status=status.HTTP_200_OK)
+                }
+                
+                if warnings:
+                    response_data['warnings'] = warnings
+                
+                return Response(response_data, status=status.HTTP_200_OK)
                 
         except Exception as e:
             return Response(

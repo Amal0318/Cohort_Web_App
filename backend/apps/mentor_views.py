@@ -24,6 +24,10 @@ from apps.iipc.models import LinkedInPostVerification
 from apps.iipc.serializers import LinkedInPostVerificationSerializer
 from apps.scd.models import LeetCodeProfile
 from apps.scd.serializers import LeetCodeProfileSerializer
+from apps.dashboard.models import Notification, Message, MessageThread
+from apps.dashboard.notifications_serializers import (
+    NotificationSerializer, MessageSerializer, MessageThreadSerializer, MessageCreateSerializer
+)
 
 
 # Helper function to check if user is a mentor
@@ -57,6 +61,7 @@ def get_pillar_submissions(request, pillar):
     search_query = request.GET.get('search', '')
     year_filter = request.GET.get('year', 'all')
     sort_order = request.GET.get('sort', 'latest')
+    student_id = request.GET.get('student_id', None)  # NEW: Filter by specific student
     
     submissions = []
     
@@ -70,7 +75,7 @@ def get_pillar_submissions(request, pillar):
     
     status_values = status_map.get(status_filter, None)
     
-    print(f"\n=== BACKEND: Fetching submissions for pillar='{pillar}', status='{status_filter}' ===")
+    print(f"\n=== BACKEND: Fetching submissions for pillar='{pillar}', status='{status_filter}', student_id='{student_id}' ===")
     
     # Get mentor's assigned students
     assigned_students = request.user.mentored_students.all().values_list('user_id', flat=True)
@@ -78,7 +83,19 @@ def get_pillar_submissions(request, pillar):
         print(f"⚠️ Mentor {request.user.username} has no assigned students")
         return Response({'submissions': [], 'total': 0})
     
-    print(f"👥 Mentor {request.user.username} has {len(assigned_students)} assigned students")
+    # If student_id is provided, only show that student's submissions
+    if student_id:
+        try:
+            student_id = int(student_id)
+            if student_id not in assigned_students:
+                print(f"⚠️ Student {student_id} is not assigned to mentor {request.user.username}")
+                return Response({'submissions': [], 'total': 0})
+            assigned_students = [student_id]
+            print(f"🎯 Filtering for specific student: {student_id}")
+        except (ValueError, TypeError):
+            pass
+    
+    print(f"👥 Showing submissions for {len(assigned_students)} student(s)")
     
     # Helper function to format submission data
     def format_submission(sub, pillar_type, model_type):
@@ -90,15 +107,18 @@ def get_pillar_submissions(request, pillar):
             'username': sub.user.username,
         }
         
-        # Map status to frontend format
-        if sub.status in ['draft', 'submitted', 'under_review', 'pending']:
+        # Map status to frontend format - ensure we're checking the ACTUAL database status
+        actual_status = sub.status  # Get the actual status from DB
+        if actual_status in ['draft', 'submitted', 'under_review', 'pending']:
             frontend_status = 'pending'
-        elif sub.status == 'approved':
+        elif actual_status == 'approved':
             frontend_status = 'approved'
-        elif sub.status == 'rejected':
+        elif actual_status == 'rejected':
             frontend_status = 'rejected'
         else:
             frontend_status = 'pending'
+        
+        print(f"   📊 {model_type} #{sub.id}: DB status='{actual_status}' → frontend='{frontend_status}'")
         
         # Get title based on model type
         title = ''
@@ -325,14 +345,14 @@ def get_pillar_stats(request, pillar):
 @permission_classes([IsAuthenticated])
 def review_submission(request):
     """
-    Review a submission (approve/reject)
+    Review a submission (approve/reject/resubmit)
     
     Body:
         - pillar: cfc, clt, iipc, scd
         - submission_id: ID of the submission
         - submission_type: hackathon, bmc, internship, genai, clt, linkedin, leetcode
-        - action: approve or reject
-        - comment: reviewer comment (required for reject)
+        - action: approve, reject, or resubmit
+        - comment: reviewer comment (required for reject/resubmit)
     """
     if not is_mentor(request.user):
         return Response(
@@ -343,7 +363,7 @@ def review_submission(request):
     pillar = request.data.get('pillar')
     submission_id = request.data.get('submission_id')
     submission_type = request.data.get('submission_type')
-    action = request.data.get('action')  # 'approve' or 'reject'
+    action = request.data.get('action')  # 'approve', 'reject', or 'resubmit'
     comment = request.data.get('comment', '')
     
     if not all([pillar, submission_id, submission_type, action]):
@@ -352,9 +372,9 @@ def review_submission(request):
             status=status.HTTP_400_BAD_REQUEST
         )
     
-    if action == 'reject' and not comment:
+    if action in ['reject', 'resubmit'] and not comment:
         return Response(
-            {"error": "Comment is required for rejection"},
+            {"error": "Comment is required for rejection or resubmission request"},
             status=status.HTTP_400_BAD_REQUEST
         )
     
@@ -384,8 +404,21 @@ def review_submission(request):
             status=status.HTTP_404_NOT_FOUND
         )
     
+    # Map action to status
+    status_map = {
+        'approve': 'approved',
+        'reject': 'rejected',
+        'resubmit': 'under_review'  # or 'resubmit' if model supports it
+    }
+    
     # Update submission
-    submission.status = 'approved' if action == 'approve' else 'rejected'
+    new_status = status_map.get(action, 'under_review')
+    print(f"\n🔄 REVIEW: Updating {submission_type} submission #{submission_id}")
+    print(f"   Old status: {submission.status}")
+    print(f"   New status: {new_status}")
+    print(f"   Action: {action}")
+    
+    submission.status = new_status
     
     # Handle different field names for comments
     if hasattr(submission, 'reviewer_comments'):
@@ -404,10 +437,47 @@ def review_submission(request):
     
     submission.save()
     
+    # Verify the save
+    submission.refresh_from_db()
+    print(f"   ✅ Status after save: {submission.status}")
+    
+    # Create notification for student
+    notification_type_map = {
+        'approve': 'submission_approved',
+        'reject': 'submission_rejected',
+        'resubmit': 'submission_resubmit'
+    }
+    
+    title_map = {
+        'approve': f'✅ Submission Approved - {pillar.upper()}',
+        'reject': f'❌ Submission Rejected - {pillar.upper()}',
+        'resubmit': f'🔄 Resubmission Requested - {pillar.upper()}'
+    }
+    
+    message_map = {
+        'approve': f'Your {submission_type} submission has been approved by your mentor!',
+        'reject': f'Your {submission_type} submission needs revision. Please review the feedback.',
+        'resubmit': f'Your mentor has requested a resubmission for your {submission_type}.'
+    }
+    
+    notification = Notification.objects.create(
+        recipient=submission.user,
+        sender=request.user,
+        notification_type=notification_type_map.get(action, 'general'),
+        priority='high' if action == 'reject' else 'normal',
+        title=title_map.get(action, 'Submission Updated'),
+        message=f"{message_map.get(action, 'Your submission has been reviewed.')} {comment}",
+        related_pillar=pillar,
+        related_submission_type=submission_type,
+        related_submission_id=submission_id,
+        action_url=f"/{pillar}"
+    )
+    
     return Response({
-        'message': f'Submission {action}d successfully',
+        'message': f'Submission {action}ed successfully',
         'submission_id': submission_id,
-        'status': submission.status
+        'status': submission.status,
+        'notification_id': notification.id
     })
 
 
@@ -568,3 +638,407 @@ def get_mentor_students(request):
         'students': students_data,
         'total': len(students_data)
     })
+
+
+# ============= NOTIFICATION ENDPOINTS =============
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_notifications(request):
+    """
+    Get all notifications for the current user
+    Query params:
+        - unread_only: true/false (default: false)
+        - limit: number of notifications to return
+    """
+    unread_only = request.GET.get('unread_only', 'false').lower() == 'true'
+    limit = int(request.GET.get('limit', 50))
+    
+    notifications = Notification.objects.filter(recipient=request.user)
+    
+    if unread_only:
+        notifications = notifications.filter(is_read=False)
+    
+    notifications = notifications[:limit]
+    
+    serializer = NotificationSerializer(notifications, many=True)
+    
+    return Response({
+        'notifications': serializer.data,
+        'unread_count': Notification.objects.filter(recipient=request.user, is_read=False).count(),
+        'total': notifications.count()
+    })
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def mark_notification_read(request, notification_id):
+    """Mark a notification as read"""
+    try:
+        notification = Notification.objects.get(id=notification_id, recipient=request.user)
+        notification.mark_as_read()
+        return Response({'message': 'Notification marked as read'})
+    except Notification.DoesNotExist:
+        return Response(
+            {'error': 'Notification not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def mark_all_notifications_read(request):
+    """Mark all notifications as read for current user"""
+    updated = Notification.objects.filter(
+        recipient=request.user,
+        is_read=False
+    ).update(
+        is_read=True,
+        read_at=timezone.now()
+    )
+    
+    return Response({
+        'message': f'{updated} notifications marked as read',
+        'count': updated
+    })
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_notification(request, notification_id):
+    """Delete a notification"""
+    try:
+        notification = Notification.objects.get(id=notification_id, recipient=request.user)
+        notification.delete()
+        return Response({'message': 'Notification deleted'})
+    except Notification.DoesNotExist:
+        return Response(
+            {'error': 'Notification not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+
+# ============= MESSAGING ENDPOINTS =============
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_message_threads(request):
+    """Get all message threads for the current user"""
+    threads = MessageThread.objects.filter(
+        Q(participant1=request.user) | Q(participant2=request.user)
+    ).select_related('participant1', 'participant2', 'last_message')
+    
+    serializer = MessageThreadSerializer(threads, many=True, context={'request': request})
+    
+    return Response({
+        'threads': serializer.data,
+        'total': threads.count()
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_thread_messages(request, user_id):
+    """
+    Get all messages in a thread with a specific user
+    Query params:
+        - limit: number of messages to return (default: 50)
+        - offset: offset for pagination (default: 0)
+    """
+    limit = int(request.GET.get('limit', 50))
+    offset = int(request.GET.get('offset', 0))
+    
+    try:
+        other_user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response(
+            {'error': 'User not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    # Get or create thread
+    thread = MessageThread.objects.filter(
+        (Q(participant1=request.user) & Q(participant2=other_user)) |
+        (Q(participant1=other_user) & Q(participant2=request.user))
+    ).first()
+    
+    if not thread:
+        # Create new thread
+        thread = MessageThread.objects.create(
+            participant1=request.user,
+            participant2=other_user
+        )
+    
+    # Get messages
+    messages = Message.objects.filter(
+        (Q(sender=request.user) & Q(recipient=other_user)) |
+        (Q(sender=other_user) & Q(recipient=request.user))
+    ).order_by('-created_at')[offset:offset+limit]
+    
+    # Mark messages as read
+    Message.objects.filter(
+        sender=other_user,
+        recipient=request.user,
+        is_read=False
+    ).update(is_read=True, read_at=timezone.now(), status='read')
+    
+    # Reset unread count for current user
+    thread.reset_unread(request.user)
+    
+    serializer = MessageSerializer(messages, many=True)
+    
+    return Response({
+        'messages': serializer.data,
+        'thread_id': thread.id,
+        'total': messages.count()
+    })
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def send_message(request):
+    """
+    Send a message to another user
+    Body:
+        - recipient_id: ID of the recipient
+        - subject: optional subject
+        - message: message text
+        - related_pillar: optional
+        - related_submission_type: optional
+        - related_submission_id: optional
+        - parent_message_id: optional (for replies)
+    """
+    serializer = MessageCreateSerializer(data=request.data)
+    
+    if not serializer.is_valid():
+        return Response(
+            {'error': serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    data = serializer.validated_data
+    recipient = User.objects.get(id=data['recipient_id'])
+    
+    # Create message
+    message = Message.objects.create(
+        sender=request.user,
+        recipient=recipient,
+        subject=data.get('subject', ''),
+        message=data['message'],
+        related_pillar=data.get('related_pillar'),
+        related_submission_type=data.get('related_submission_type'),
+        related_submission_id=data.get('related_submission_id'),
+        parent_message=Message.objects.get(id=data['parent_message_id']) if data.get('parent_message_id') else None
+    )
+    
+    # Get or create thread
+    thread = MessageThread.objects.filter(
+        (Q(participant1=request.user) & Q(participant2=recipient)) |
+        (Q(participant1=recipient) & Q(participant2=request.user))
+    ).first()
+    
+    if not thread:
+        thread = MessageThread.objects.create(
+            participant1=request.user,
+            participant2=recipient
+        )
+    
+    # Update thread
+    thread.last_message = message
+    thread.last_message_at = timezone.now()
+    thread.increment_unread(recipient)  # Increment unread for recipient
+    thread.save()
+    
+    # Create notification for recipient
+    Notification.objects.create(
+        recipient=recipient,
+        sender=request.user,
+        notification_type='message',
+        title=f'💬 New Message from {request.user.get_full_name() or request.user.username}',
+        message=data['message'][:100] + ('...' if len(data['message']) > 100 else ''),
+        action_url='/messages'
+    )
+    
+    return Response({
+        'message': 'Message sent successfully',
+        'message_id': message.id,
+        'thread_id': thread.id
+    }, status=status.HTTP_201_CREATED)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_unread_counts(request):
+    """Get unread counts for notifications and messages"""
+    notifications_count = Notification.objects.filter(
+        recipient=request.user,
+        is_read=False
+    ).count()
+    
+    messages_count = Message.objects.filter(
+        recipient=request.user,
+        is_read=False
+    ).count()
+    
+    return Response({
+        'notifications': notifications_count,
+        'messages': messages_count,
+        'total': notifications_count + messages_count
+    })
+
+
+# ============= ANNOUNCEMENT ENDPOINTS =============
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def announcements(request):
+    """
+    GET: List all announcements created by the current mentor
+    POST: Create a new announcement
+    """
+    from apps.dashboard.models import Announcement
+    from apps.dashboard.notifications_serializers import AnnouncementSerializer, AnnouncementCreateSerializer
+    
+    if not is_mentor(request.user):
+        return Response(
+            {"error": "You don't have permission to access this resource"},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    if request.method == 'GET':
+        # Get all announcements by this mentor
+        announcements_list = Announcement.objects.filter(mentor=request.user)
+        serializer = AnnouncementSerializer(announcements_list, many=True)
+        return Response({
+            'announcements': serializer.data,
+            'total': len(serializer.data)
+        })
+    
+    elif request.method == 'POST':
+        # Create new announcement
+        print("\n=== ANNOUNCEMENT CREATE DEBUG ===")
+        print(f"Request data: {request.data}")
+        print(f"Content type: {request.content_type}")
+        
+        serializer = AnnouncementCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            announcement = serializer.save(mentor=request.user)
+            return Response(
+                AnnouncementSerializer(announcement).data,
+                status=status.HTTP_201_CREATED
+            )
+        
+        print(f"Validation errors: {serializer.errors}")
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET', 'PUT', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def announcement_detail(request, announcement_id):
+    """
+    GET: Get announcement details
+    PUT: Update announcement
+    DELETE: Delete announcement
+    """
+    from apps.dashboard.models import Announcement
+    from apps.dashboard.notifications_serializers import AnnouncementSerializer, AnnouncementCreateSerializer
+    
+    if not is_mentor(request.user):
+        return Response(
+            {"error": "You don't have permission to access this resource"},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    try:
+        announcement = Announcement.objects.get(id=announcement_id, mentor=request.user)
+    except Announcement.DoesNotExist:
+        return Response(
+            {"error": "Announcement not found"},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    if request.method == 'GET':
+        serializer = AnnouncementSerializer(announcement)
+        return Response(serializer.data)
+    
+    elif request.method == 'PUT':
+        serializer = AnnouncementCreateSerializer(announcement, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(AnnouncementSerializer(announcement).data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    elif request.method == 'DELETE':
+        announcement.delete()
+        return Response(
+            {"message": "Announcement deleted successfully"},
+            status=status.HTTP_204_NO_CONTENT
+        )
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def student_announcements(request):
+    """Get all announcements for the current student from their mentor"""
+    from apps.dashboard.models import Announcement
+    from apps.profiles.models import UserProfile
+    from apps.dashboard.notifications_serializers import AnnouncementSerializer
+    
+    try:
+        student_profile = UserProfile.objects.get(user=request.user)
+        if not student_profile.assigned_mentor:
+            return Response({
+                'announcements': [],
+                'total': 0,
+                'unread_count': 0
+            })
+        
+        announcements_list = Announcement.objects.filter(mentor=student_profile.assigned_mentor).order_by('-created_at')
+        serializer = AnnouncementSerializer(announcements_list, many=True, context={'request': request})
+        
+        # Count unread announcements
+        unread_count = sum(1 for ann in serializer.data if not ann['is_read'])
+        
+        return Response({
+            'announcements': serializer.data,
+            'total': len(serializer.data),
+            'unread_count': unread_count
+        })
+    except UserProfile.DoesNotExist:
+        return Response({
+            'announcements': [],
+            'total': 0,
+            'unread_count': 0
+        })
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def mark_announcement_read(request, announcement_id):
+    """Mark an announcement as read for the current student"""
+    from apps.dashboard.models import Announcement, AnnouncementRead
+    
+    try:
+        announcement = Announcement.objects.get(id=announcement_id)
+        
+        # Create or get the read record
+        read_record, created = AnnouncementRead.objects.get_or_create(
+            announcement=announcement,
+            user=request.user
+        )
+        
+        return Response({
+            'success': True,
+            'message': 'Announcement marked as read',
+            'already_read': not created
+        })
+    except Announcement.DoesNotExist:
+        return Response(
+            {'error': 'Announcement not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except StudentProfile.DoesNotExist:
+        return Response({
+            'announcements': [],
+            'total': 0
+        })

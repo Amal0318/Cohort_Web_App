@@ -22,4 +22,20 @@ urlpatterns = [
     path('submission/<str:pillar>/<str:submission_type>/<int:submission_id>/', 
          mentor_views.get_submission_detail, 
          name='submission-detail'),
+    
+    # Notifications
+    path('notifications/', mentor_views.get_notifications, name='notifications'),
+    path('notifications/<int:notification_id>/read/', mentor_views.mark_notification_read, name='mark-notification-read'),
+    path('notifications/read-all/', mentor_views.mark_all_notifications_read, name='mark-all-notifications-read'),
+    path('notifications/<int:notification_id>/', mentor_views.delete_notification, name='delete-notification'),
+    
+    # Messaging
+    path('messages/threads/', mentor_views.get_message_threads, name='message-threads'),
+    path('messages/thread/<int:user_id>/', mentor_views.get_thread_messages, name='thread-messages'),
+    path('messages/send/', mentor_views.send_message, name='send-message'),
+    path('messages/unread-counts/', mentor_views.get_unread_counts, name='unread-counts'),
+    
+    # Announcements
+    path('announcements/', mentor_views.announcements, name='announcements'),
+    path('announcements/<int:announcement_id>/', mentor_views.announcement_detail, name='announcement-detail'),
 ]
