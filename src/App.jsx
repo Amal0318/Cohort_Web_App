@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
 // eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, Lightbulb, Heart, Trophy, Linkedin, Code, Menu, X, LogOut, Zap, Users, ClipboardCheck, Megaphone } from 'lucide-react';
+import { Home, Lightbulb, Heart, Trophy, Linkedin, Code, Menu, X, LogOut, Zap, Users, ClipboardCheck, Megaphone, Gamepad2 } from 'lucide-react';
 import { ThemeProvider } from './theme/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ThemeToggle from './components/ThemeToggle';
@@ -13,6 +13,7 @@ import SRI from './pages/student/SRI';
 import CFC from './pages/student/CFC';
 import IIPC from './pages/student/IIPC';
 import SCD from './pages/student/SCD';
+import Games from './pages/student/Games';
 import ProfileSettings from './pages/student/ProfileSettings';
 import MonthlyReport from './pages/student/MonthlyReport';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -42,6 +43,7 @@ const NAV_ITEMS = [
   { path: '/cfc', label: 'CFC', icon: Trophy },
   { path: '/iipc', label: 'IIPC', icon: Linkedin },
   { path: '/scd', label: 'SCD', icon: Code },
+  { path: '/games', label: 'Games', icon: Gamepad2 },
 ];
 
 function Navigation() {
@@ -269,6 +271,7 @@ function AppContent() {
           <Route path="/cfc" element={<ProtectedRoute><CFC /></ProtectedRoute>} />
           <Route path="/iipc" element={<ProtectedRoute><IIPC /></ProtectedRoute>} />
           <Route path="/scd" element={<ProtectedRoute><SCD /></ProtectedRoute>} />
+          <Route path="/games" element={<ProtectedRoute><Games /></ProtectedRoute>} />
           {/* Redirect old hackathons route to CFC */}
           <Route path="/hackathons" element={<Navigate to="/cfc" replace />} />
           <Route path="/monthly-report" element={<ProtectedRoute><MonthlyReport /></ProtectedRoute>} />

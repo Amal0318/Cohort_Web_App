@@ -60,25 +60,6 @@ const PILLARS_CONFIG = [
     }
 ];
 
-// Problem Statements Configuration
-const PROBLEM_STATEMENTS = [
-    {
-        icon: Eye,
-        title: 'Scattered Efforts',
-        description: 'Student achievements remain fragmented across platforms, making progress invisible.'
-    },
-    {
-        icon: Compass,
-        title: 'Lack of Guidance',
-        description: 'Without structured mentorship, students navigate their journey without direction.'
-    },
-    {
-        icon: Target,
-        title: 'No Unified Vision',
-        description: 'Institutions struggle to see the complete picture of student development.'
-    }
-];
-
 // Mentorship Features Configuration
 const MENTORSHIP_FEATURES = [
     'Weekly Progress Reviews',
@@ -172,27 +153,6 @@ const HeroBlock = ({ scrollY }) => (
 
         <div className="scroll-hint">
             <ChevronDown className="scroll-icon" />
-        </div>
-    </div>
-);
-
-const ProblemBlock = () => (
-    <div className="content-block problem-block">
-        <div className="problem-content">
-            <div className="section-label">The Challenge</div>
-            <div className="problem-statements">
-                {PROBLEM_STATEMENTS.map((problem, index) => (
-                    <div key={index} className="problem-statement">
-                        <div className="problem-icon">
-                            <problem.icon size={24} />
-                        </div>
-                        <div className="problem-text">
-                            <h3>{problem.title}</h3>
-                            <p>{problem.description}</p>
-                        </div>
-                    </div>
-                ))}
-            </div>
         </div>
     </div>
 );
@@ -537,7 +497,6 @@ const ParallaxIntro = () => {
                 <AmbientBackground particles={ambientParticles} />
 
                 <HeroBlock scrollY={scrollY} />
-                <ProblemBlock />
                 <SolutionBlock scrollY={scrollY} />
                 <PillarsBlock />
                 <MentorshipBlock />

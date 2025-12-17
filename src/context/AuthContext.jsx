@@ -5,7 +5,7 @@ const AuthContext = createContext();
 
 // Role-based access control configuration
 const ROLE_ACCESS = {
-    student: ['/', '/clt', '/sri', '/cfc', '/iipc', '/scd', '/hackathons', '/monthly-report', '/profile-settings'],
+    student: ['/', '/clt', '/sri', '/cfc', '/iipc', '/scd', '/games', '/hackathons', '/monthly-report', '/profile-settings'],
     mentor: ['/mentor-dashboard', '/mentor-dashboard/students', '/mentor-dashboard/pillar-review'],
     floorwing: ['/floorwing-dashboard'],
     admin: [

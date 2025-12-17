@@ -28,6 +28,10 @@ for user_data in users:
     # Create user
     if role == 'admin':
         user = User.objects.create_superuser(username=username, email=email, password=password)
+    elif role == 'mentor':
+        user = User.objects.create_user(username=username, email=email, password=password)
+        user.is_staff = True  # Mentors need staff privileges
+        user.save()
     else:
         user = User.objects.create_user(username=username, email=email, password=password)
     
