@@ -34,9 +34,30 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
         # Generate tokens
         refresh = self.get_token(user)
         
+        # Get user profile info
+        profile_data = {}
+        if hasattr(user, 'profile'):
+            profile = user.profile
+            profile_data = {
+                'role': profile.role,
+                'role_display': profile.get_role_display(),
+                'campus': profile.campus,
+                'campus_display': profile.get_campus_display() if profile.campus else None,
+                'floor': profile.floor,
+                'floor_display': profile.get_floor_display() if profile.floor else None,
+            }
+        
         data = {
             'refresh': str(refresh),
             'access': str(refresh.access_token),
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'profile': profile_data
+            }
         }
         
         return data

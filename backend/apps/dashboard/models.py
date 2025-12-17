@@ -109,6 +109,7 @@ class Notification(models.Model):
         ('submission_approved', 'Submission Approved'),
         ('submission_rejected', 'Submission Rejected'),
         ('submission_resubmit', 'Resubmission Requested'),
+        ('announcement', 'Announcement'),  # New type for announcements
         ('message', 'New Message'),
         ('info', 'Info'),
         ('warning', 'Warning'),

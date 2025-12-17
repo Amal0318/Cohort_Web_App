@@ -10,17 +10,18 @@ import { Button } from '../components/Button';
 import './Login.css';
 
 const ROLES = [
-    { id: 'student', label: 'Student', icon: GraduationCap, color: '#F7C948', description: 'Access student dashboard' },
-    { id: 'mentor', label: 'Mentor', icon: Users, color: '#42A5F5', description: 'Guide and support students' },
-    { id: 'admin', label: 'Admin', icon: Crown, color: '#E53935', description: 'Full system access' },
+    { id: 'STUDENT', label: 'Student', icon: GraduationCap, color: '#F7C948', description: 'Access student dashboard' },
+    { id: 'MENTOR', label: 'Mentor', icon: Users, color: '#42A5F5', description: 'Guide and support students' },
+    { id: 'FLOOR_WING', label: 'Floor Wing', icon: Shield, color: '#66BB6A', description: 'Manage floor operations' },
+    { id: 'ADMIN', label: 'Admin', icon: Crown, color: '#E53935', description: 'Full system access' },
 ];
 //vishnu
 const Login = () => {
     const navigate = useNavigate();
-    const { login } = useAuth();
+    const { login, getHomePath } = useAuth();
     const [showPassword, setShowPassword] = useState(false);
     const [isLogin, setIsLogin] = useState(true);
-    const [selectedRole, setSelectedRole] = useState('student');
+    const [selectedRole, setSelectedRole] = useState('STUDENT');
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -83,20 +84,9 @@ const Login = () => {
                 // Use email as username for login
                 await login(formData.email, formData.password, selectedRole);
 
-                // Navigate based on role
-                switch (selectedRole) {
-                    case 'student':
-                        navigate('/');
-                        break;
-                    case 'mentor':
-                        navigate('/mentor-dashboard');
-                        break;
-                    case 'admin':
-                        navigate('/admin-dashboard');
-                        break;
-                    default:
-                        navigate('/');
-                }
+                // Navigate to role-based home path
+                const homePath = getHomePath();
+                navigate(homePath);
             } catch (error) {
                 console.error('Login error:', error);
                 console.error('Error response:', error.response?.data);

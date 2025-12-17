@@ -260,6 +260,10 @@ function EnhancedAdminDashboard() {
                             <div className="admin-quick-actions">
                                 <h2>Quick Actions</h2>
                                 <div className="admin-action-buttons">
+                                    <button className="admin-action-btn primary" onClick={() => navigate('/admin/campus-select')}>
+                                        <Building2 size={20} />
+                                        <span>Campus Management</span>
+                                    </button>
                                     <button className="admin-action-btn" onClick={() => navigate('/admin/students')}>
                                         <Users size={20} />
                                         <span>Manage Students</span>
@@ -271,10 +275,6 @@ function EnhancedAdminDashboard() {
                                     <button className="admin-action-btn" onClick={() => navigate('/admin/submissions')}>
                                         <CheckCircle size={20} />
                                         <span>Review Submissions</span>
-                                    </button>
-                                    <button className="admin-action-btn" onClick={() => navigate('/admin/floors')}>
-                                        <Building2 size={20} />
-                                        <span>Floor Management</span>
                                     </button>
                                     <button className="admin-action-btn" onClick={() => navigate('/admin/leaderboard')}>
                                         <Trophy size={20} />

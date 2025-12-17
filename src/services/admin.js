@@ -285,6 +285,89 @@ export const getActivityLogs = async (params = {}) => {
   return response.data;
 };
 
+// ===== CAMPUS/FLOOR HIERARCHY =====
+export const getCampusOverview = async (campus) => {
+  try {
+    const token = localStorage.getItem('accessToken');
+    console.log('getCampusOverview - Token exists:', !!token);
+    console.log('getCampusOverview - Campus:', campus);
+    console.log('getCampusOverview - URL:', `${API_BASE_URL}/profiles/admin/campus/${campus}/`);
+    
+    const response = await axios.get(`${API_BASE_URL}/profiles/admin/campus/${campus}/`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    console.log('getCampusOverview - Success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('getCampusOverview - Error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const getFloorDetail = async (campus, floor) => {
+  try {
+    const token = localStorage.getItem('accessToken');
+    console.log('getFloorDetail - Token exists:', !!token);
+    console.log('getFloorDetail - Campus/Floor:', campus, floor);
+    console.log('getFloorDetail - URL:', `${API_BASE_URL}/profiles/admin/campus/${campus}/floor/${floor}/`);
+    
+    const response = await axios.get(`${API_BASE_URL}/profiles/admin/campus/${campus}/floor/${floor}/`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    console.log('getFloorDetail - Success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('getFloorDetail - Error:', error.response?.data || error.message);
+    console.error('getFloorDetail - Status:', error.response?.status);
+    throw error;
+  }
+};
+
+export const getStudentDetail = async (studentId) => {
+  try {
+    const token = localStorage.getItem('accessToken');
+    const response = await axios.get(`${API_BASE_URL}/profiles/admin/student/${studentId}/`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('getStudentDetail - Error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const assignFloorWing = async (campus, floor, userId) => {
+  const response = await axios.post(`${API_BASE_URL}/profiles/admin/assign-floor-wing/`, {
+    campus,
+    floor,
+    user_id: userId
+  }, {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+    }
+  });
+  return response.data;
+};
+
+export const assignMentor = async (campus, floor, userId) => {
+  const response = await axios.post(`${API_BASE_URL}/profiles/admin/assign-mentor/`, {
+    campus,
+    floor,
+    user_id: userId
+  }, {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+    }
+  });
+  return response.data;
+};
+
 export default {
   getDashboardStats,
   getStudents,
@@ -332,4 +415,9 @@ export default {
   getMentorAnalytics,
   getXPDistribution,
   getActivityLogs,
+  getCampusOverview,
+  getFloorDetail,
+  getStudentDetail,
+  assignFloorWing,
+  assignMentor,
 };

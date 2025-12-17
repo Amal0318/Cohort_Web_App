@@ -29,6 +29,9 @@ import Notifications from './pages/admin/notifications/Notifications';
 import Roles from './pages/admin/roles/Roles';
 import Settings from './pages/admin/settings/Settings';
 import StudentMentorAssignment from './pages/admin/assignments/StudentMentorAssignment';
+import CampusSelection from './pages/admin/campus/CampusSelection';
+import CampusOverview from './pages/admin/campus/CampusOverview';
+import FloorDetail from './pages/admin/campus/FloorDetail';
 import MentorLayout from './pages/mentor/MentorLayout';
 import FloorWingDashboard from './pages/floorwing/FloorWingDashboard';
 import Login from './pages/Login';
@@ -55,29 +58,40 @@ function Navigation() {
   // Determine home path based on user role
   const getHomePath = () => {
     if (!user) return '/login';
-    switch (user.role) {
+    const role = user.role || user.profile?.role;
+    switch (role) {
+      case 'STUDENT':
       case 'student':
         return '/';
+      case 'MENTOR':
       case 'mentor':
         return '/mentor-dashboard';
+      case 'FLOOR_WING':
       case 'floorwing':
         return '/floorwing-dashboard';
+      case 'ADMIN':
       case 'admin':
-        return '/admin-dashboard';
+        return '/admin/campus-select';
       default:
         return '/login';
     }
   };
 
   // Show navigation items based on role
-  const showNavItems = user && user.role === 'student';
-  const showMentorNavItems = user && user.role === 'mentor';
+  const userRole = user?.role || user?.profile?.role;
+  const showNavItems = user && (userRole === 'STUDENT' || userRole === 'student');
+  const showMentorNavItems = user && (userRole === 'MENTOR' || userRole === 'mentor');
+  const showFloorWingNavItems = user && (userRole === 'FLOOR_WING' || userRole === 'floorwing');
 
   const MENTOR_NAV_ITEMS = [
     { path: '/mentor-dashboard', label: 'Home', icon: Home },
     { path: '/mentor-dashboard/students', label: 'Student List', icon: Users },
     { path: '/mentor-dashboard/pillar-review', label: 'Pillar Review', icon: ClipboardCheck },
     { path: '/mentor-dashboard/announcements', label: 'Announcements', icon: Megaphone },
+  ];
+
+  const FLOOR_WING_NAV_ITEMS = [
+    { path: '/floorwing-dashboard', label: 'Dashboard', icon: Home },
   ];
 
   return (
@@ -127,6 +141,34 @@ function Navigation() {
         {showMentorNavItems && (
           <div className="nav-links">
             {MENTOR_NAV_ITEMS.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.path;
+
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`nav-link ${isActive ? 'nav-link--active' : ''}`}
+                >
+                  <Icon size={20} />
+                  <span>{item.label}</span>
+                  {isActive && (
+                    <motion.div
+                      className="nav-link-indicator"
+                      layoutId="activeLink"
+                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                    />
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Desktop Navigation - Floor Wing */}
+        {showFloorWingNavItems && (
+          <div className="nav-links">
+            {FLOOR_WING_NAV_ITEMS.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
 
@@ -233,6 +275,34 @@ function Navigation() {
             })}
           </motion.div>
         )}
+
+        {/* Mobile Menu - Floor Wing */}
+        {isMenuOpen && showFloorWingNavItems && (
+          <motion.div
+            className="nav-mobile"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            {FLOOR_WING_NAV_ITEMS.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.path;
+
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`nav-mobile-link ${isActive ? 'nav-mobile-link--active' : ''}`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Icon size={20} />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </motion.div>
+        )}
       </AnimatePresence>
     </nav>
   );
@@ -268,6 +338,32 @@ function AppContent() {
           <Route path="/monthly-report" element={<ProtectedRoute><MonthlyReport /></ProtectedRoute>} />
           <Route path="/profile-settings" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
 
+          {/* Admin Campus Routes - Before AdminLayout */}
+          <Route 
+            path="/admin/campus-select" 
+            element={
+              <ProtectedRoute requiredRole="ADMIN">
+                <CampusSelection />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/campus/:campus" 
+            element={
+              <ProtectedRoute requiredRole="ADMIN">
+                <CampusOverview />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/campus/:campus/floor/:floor" 
+            element={
+              <ProtectedRoute requiredRole="ADMIN">
+                <FloorDetail />
+              </ProtectedRoute>
+            } 
+          />
+
           {/* Admin Routes with Sidebar Layout */}
           <Route path="/admin-dashboard" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
             <Route index element={<AdminDashboard />} />
@@ -289,8 +385,22 @@ function AppContent() {
           </Route>
 
           {/* Other Role Dashboards */}
-          <Route path="/mentor-dashboard/*" element={<ProtectedRoute><MentorLayout /></ProtectedRoute>} />
-          <Route path="/floorwing-dashboard" element={<ProtectedRoute><FloorWingDashboard /></ProtectedRoute>} />
+          <Route 
+            path="/mentor-dashboard/*" 
+            element={
+              <ProtectedRoute requiredRole="MENTOR">
+                <MentorLayout />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/floorwing-dashboard" 
+            element={
+              <ProtectedRoute requiredRole="FLOOR_WING">
+                <FloorWingDashboard />
+              </ProtectedRoute>
+            } 
+          />
         </Routes>
       </main>
     </div>

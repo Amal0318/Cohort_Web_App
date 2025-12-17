@@ -10,13 +10,17 @@ class UserProfileSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source='user.email', read_only=True)
     first_name = serializers.CharField(source='user.first_name', read_only=True)
     last_name = serializers.CharField(source='user.last_name', read_only=True)
+    role_display = serializers.CharField(source='get_role_display', read_only=True)
+    campus_display = serializers.CharField(source='get_campus_display', read_only=True)
+    floor_display = serializers.CharField(source='get_floor_display', read_only=True)
     
     class Meta:
         model = UserProfile
         fields = [
             'id', 'user', 'username', 'email', 'first_name', 'last_name',
+            'role', 'role_display', 'campus', 'campus_display', 'floor', 'floor_display',
             'leetcode_id', 'github_id', 'linkedin_id',
-            'created_at', 'updated_at'
+            'assigned_mentor', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'user', 'created_at', 'updated_at']
 

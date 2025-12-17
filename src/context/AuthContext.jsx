@@ -5,10 +5,12 @@ const AuthContext = createContext();
 
 // Role-based access control configuration
 const ROLE_ACCESS = {
-    student: ['/', '/clt', '/sri', '/cfc', '/iipc', '/scd', '/hackathons', '/monthly-report', '/profile-settings'],
-    mentor: ['/mentor-dashboard', '/mentor-dashboard/students', '/mentor-dashboard/pillar-review'],
-    floorwing: ['/floorwing-dashboard'],
-    admin: [
+    STUDENT: ['/', '/clt', '/sri', '/cfc', '/iipc', '/scd', '/hackathons', '/monthly-report', '/profile-settings'],
+    MENTOR: ['/mentor-dashboard', '/mentor-dashboard/students', '/mentor-dashboard/pillar-review', '/mentor-dashboard/announcements'],
+    FLOOR_WING: ['/floorwing-dashboard'],
+    ADMIN: [
+        '/admin/campus-select',
+        '/admin/campus',
         '/admin-dashboard',
         '/admin/students',
         '/admin/mentors',
@@ -24,6 +26,14 @@ const ROLE_ACCESS = {
     ],
 };
 
+// Role home paths
+const ROLE_HOME_PATHS = {
+    STUDENT: '/',
+    MENTOR: '/mentor-dashboard',
+    FLOOR_WING: '/floorwing-dashboard',
+    ADMIN: '/admin/campus-select'
+};
+
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(() => {
         // Initialize state from localStorage
@@ -36,9 +46,16 @@ export const AuthProvider = ({ children }) => {
             setLoading(true);
             const response = await authService.login(username, password);
 
+            // Extract role from backend response (profile.role)
+            const userRole = response.user?.profile?.role || role || 'STUDENT';
+            const campus = response.user?.profile?.campus;
+            const floor = response.user?.profile?.floor;
+
             const userWithRole = {
                 ...response.user,
-                role: role || response.user.role || 'student',
+                role: userRole,
+                campus: campus,
+                floor: floor,
                 timestamp: new Date().toISOString(),
             };
 
@@ -71,6 +88,11 @@ export const AuthProvider = ({ children }) => {
         return authService.getAccessToken();
     };
 
+    const getHomePath = () => {
+        if (!user || !user.role) return '/login';
+        return ROLE_HOME_PATHS[user.role] || '/login';
+    };
+
     const value = {
         user,
         login,
@@ -79,6 +101,7 @@ export const AuthProvider = ({ children }) => {
         loading,
         isAuthenticated: authService.isAuthenticated(),
         getToken,
+        getHomePath,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
