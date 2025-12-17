@@ -67,7 +67,11 @@ const KenKenGame = ({ onClose, pillarName }) => {
             hashCode = seed.charCodeAt(i) + ((hashCode << 5) - hashCode);
         }
 
-        const size = 4; // 4x4 grid
+        // Generate different grid sizes daily: 3x3, 4x4, 5x5, or 6x6
+        const gridSizes = [3, 4, 5, 6];
+        const sizeIndex = Math.abs(hashCode) % gridSizes.length;
+        const size = gridSizes[sizeIndex];
+
         const solution = generateSolution(size, hashCode);
         const cages = generateCages(solution, hashCode);
 
@@ -283,20 +287,33 @@ const KenKenGame = ({ onClose, pillarName }) => {
         }
     };
 
-    // Update streak
+    // Update streak with proper daily tracking
     const updateStreak = () => {
         const today = new Date().toDateString();
         const savedData = JSON.parse(localStorage.getItem(`kenken-${pillarName}`) || '{}');
 
+        // If already completed today, don't update streak
+        if (savedData.lastPlayed === today) {
+            setStreak(savedData.streak || 1);
+            return;
+        }
+
         let newStreak = 1;
         if (savedData.lastPlayed) {
             const lastDate = new Date(savedData.lastPlayed);
-            const daysDiff = Math.floor((new Date() - lastDate) / (1000 * 60 * 60 * 24));
+            const todayDate = new Date();
+
+            // Calculate days difference properly
+            lastDate.setHours(0, 0, 0, 0);
+            todayDate.setHours(0, 0, 0, 0);
+            const daysDiff = Math.floor((todayDate - lastDate) / (1000 * 60 * 60 * 24));
 
             if (daysDiff === 1) {
+                // Consecutive day - increment streak
                 newStreak = (savedData.streak || 0) + 1;
-            } else if (daysDiff === 0) {
-                newStreak = savedData.streak || 1;
+            } else if (daysDiff > 1) {
+                // Gap in days - reset streak
+                newStreak = 1;
             }
         }
 
@@ -316,16 +333,17 @@ const KenKenGame = ({ onClose, pillarName }) => {
         setCurrentHint(null);
     };
 
-    // Generate intelligent hint
+    // Generate intelligent hint using actual solution
     const generateHint = () => {
-        if (!gameState) return;
+        if (!gameState || !gameState.solution) return;
 
-        // Strategy 1: Find single-cell cages (easiest)
-        for (const cage of gameState.cages) {
-            if (cage.cells.length === 1) {
-                const [row, col] = cage.cells[0];
+        // Strategy 1: Find empty cells and provide solution value
+        for (let row = 0; row < gameState.size; row++) {
+            for (let col = 0; col < gameState.size; col++) {
                 if (userGrid[row][col] === 0) {
-                    setCurrentHint(`Try cell (${row + 1}, ${col + 1}): Single-cell cage = ${cage.target}`);
+                    const correctValue = gameState.solution[row][col];
+                    const cage = getCageForCell(row, col);
+                    setCurrentHint(`Cell (${row + 1}, ${col + 1}) should be ${correctValue} (Cage: ${cage.target}${cage.operation || ''})`);
                     setFocusedCell({ row, col });
                     setSelectedCell({ row, col });
                     return;
@@ -333,86 +351,21 @@ const KenKenGame = ({ onClose, pillarName }) => {
             }
         }
 
-        // Strategy 2: Find cages with only one empty cell
-        for (const cage of gameState.cages) {
-            const values = cage.cells.map(([r, c]) => userGrid[r][c]);
-            const emptyCount = values.filter(v => v === 0).length;
-
-            if (emptyCount === 1) {
-                const emptyIndex = values.findIndex(v => v === 0);
-                const [row, col] = cage.cells[emptyIndex];
-                const filledValues = values.filter(v => v !== 0);
-
-                let hint = `Cell (${row + 1}, ${col + 1}): `;
-                if (cage.operation === '+') {
-                    const sum = filledValues.reduce((a, b) => a + b, 0);
-                    hint += `Need ${cage.target - sum} to reach ${cage.target}`;
-                } else if (cage.operation === '×') {
-                    const product = filledValues.reduce((a, b) => a * b, 1);
-                    hint += `Need ${cage.target / product} to reach ${cage.target}`;
-                } else {
-                    hint += `Only one number missing in cage ${cage.target}${cage.operation || ''}`;
-                }
-
-                setCurrentHint(hint);
-                setFocusedCell({ row, col });
-                setSelectedCell({ row, col });
-                return;
-            }
-        }
-
-        // Strategy 3: Find rows/columns with few empty cells
+        // Strategy 2: Find incorrect cells and suggest correct value
         for (let row = 0; row < gameState.size; row++) {
-            const rowValues = userGrid[row];
-            const emptyCount = rowValues.filter(v => v === 0).length;
-
-            if (emptyCount === 1) {
-                const col = rowValues.findIndex(v => v === 0);
-                const usedInRow = new Set(rowValues.filter(v => v !== 0));
-                const missing = [];
-                for (let i = 1; i <= gameState.size; i++) {
-                    if (!usedInRow.has(i)) missing.push(i);
+            for (let col = 0; col < gameState.size; col++) {
+                if (userGrid[row][col] !== gameState.solution[row][col]) {
+                    const correctValue = gameState.solution[row][col];
+                    const userValue = userGrid[row][col];
+                    setCurrentHint(`Cell (${row + 1}, ${col + 1}) is ${userValue} but should be ${correctValue}`);
+                    setFocusedCell({ row, col });
+                    setSelectedCell({ row, col });
+                    return;
                 }
-                setCurrentHint(`Cell (${row + 1}, ${col + 1}): Row needs ${missing.join(', ')}`);
-                setFocusedCell({ row, col });
-                setSelectedCell({ row, col });
-                return;
             }
         }
 
-        for (let col = 0; col < gameState.size; col++) {
-            const colValues = userGrid.map(row => row[col]);
-            const emptyCount = colValues.filter(v => v === 0).length;
-
-            if (emptyCount === 1) {
-                const row = colValues.findIndex(v => v === 0);
-                const usedInCol = new Set(colValues.filter(v => v !== 0));
-                const missing = [];
-                for (let i = 1; i <= gameState.size; i++) {
-                    if (!usedInCol.has(i)) missing.push(i);
-                }
-                setCurrentHint(`Cell (${row + 1}, ${col + 1}): Column needs ${missing.join(', ')}`);
-                setFocusedCell({ row, col });
-                setSelectedCell({ row, col });
-                return;
-            }
-        }
-
-        // Strategy 4: General hint about cage operations
-        for (const cage of gameState.cages) {
-            const values = cage.cells.map(([r, c]) => userGrid[r][c]);
-            const emptyCount = values.filter(v => v === 0).length;
-
-            if (emptyCount >= 2) {
-                const [row, col] = cage.cells[0];
-                setCurrentHint(`Focus on cage ${cage.target}${cage.operation || ''} - it has ${cage.cells.length} cells`);
-                setFocusedCell({ row, col });
-                setSelectedCell({ row, col });
-                return;
-            }
-        }
-
-        setCurrentHint('Great progress! Keep filling cells while checking row/column constraints.');
+        setCurrentHint('All cells are correct! Click "Check Solution" to verify.');
     };
 
     // Get cage for cell
@@ -563,7 +516,7 @@ const KenKenGame = ({ onClose, pillarName }) => {
                                         <input
                                             type="text"
                                             inputMode="numeric"
-                                            pattern="[1-4]"
+                                            pattern={`[1-${gameState.size}]`}
                                             maxLength="1"
                                             value={userGrid[row][col] || ''}
                                             onChange={(e) => handleCellInput(row, col, e.target.value)}

@@ -21,7 +21,7 @@
     border: 1px solid var(--glass-border);
     border-radius: 24px;
     padding: 2rem;
-    max-width: 600px;
+    max-width: 700px;
     width: 100%;
     max-height: 90vh;
     overflow-y: auto;
@@ -198,8 +198,10 @@
     border-color: #000000;
     cursor: pointer;
     transition: all 0.15s ease;
-    min-width: 70px;
-    min-height: 70px;
+    min-width: 60px;
+    min-height: 60px;
+    max-width: 90px;
+    max-height: 90px;
     box-sizing: border-box;
 }
 
