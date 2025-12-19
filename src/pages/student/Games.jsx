@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gamepad2, Trophy, Puzzle, Brain } from 'lucide-react';
+import { Gamepad2, Trophy, Puzzle, Brain, Sparkles } from 'lucide-react';
 import GlassCard from '../../components/GlassCard';
 import KenKenGame from '../../components/games/KenKenGame';
+import MemoryMatchingGame from '../../components/games/MemoryMatchingGame';
 import './Games.css';
 
 export const Games = () => {
@@ -17,7 +18,14 @@ export const Games = () => {
             color: 'linear-gradient(135deg, #F7C948 0%, #FFA726 100%)',
             borderColor: 'rgba(247, 201, 72, 0.5)',
         },
-        // More games can be added here in the future
+        {
+            id: 'memory',
+            name: 'Memory Matching',
+            description: 'Match pairs of numbers and symbols! Test your memory with daily challenges of varying difficulty.',
+            icon: Sparkles,
+            color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            borderColor: 'rgba(102, 126, 234, 0.5)',
+        },
     ];
 
     return (
@@ -106,6 +114,12 @@ export const Games = () => {
             <AnimatePresence>
                 {selectedGame === 'kenken' && (
                     <KenKenGame
+                        onClose={() => setSelectedGame(null)}
+                        pillarName="Games"
+                    />
+                )}
+                {selectedGame === 'memory' && (
+                    <MemoryMatchingGame
                         onClose={() => setSelectedGame(null)}
                         pillarName="Games"
                     />

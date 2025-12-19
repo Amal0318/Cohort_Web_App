@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Calendar, Flame, X, Check, RefreshCw, HelpCircle } from 'lucide-react';
+import { Trophy, Calendar, Flame, X, Check, RefreshCw, HelpCircle, Zap } from 'lucide-react';
 import './KenKenGame.css';
 
 const KenKenGame = ({ onClose, pillarName }) => {
@@ -14,6 +14,7 @@ const KenKenGame = ({ onClose, pillarName }) => {
     const [showHints, setShowHints] = useState(false);
     const [focusedCell, setFocusedCell] = useState(null);
     const [currentHint, setCurrentHint] = useState(null);
+    const [difficulty, setDifficulty] = useState('medium');
 
     // Handle keyboard input
     useEffect(() => {
@@ -68,9 +69,14 @@ const KenKenGame = ({ onClose, pillarName }) => {
         }
 
         // Generate different grid sizes daily: 3x3, 4x4, 5x5, or 6x6
-        const gridSizes = [3, 4, 5, 6];
+        const gridSizes = [
+            { size: 3, difficulty: 'easy' },
+            { size: 4, difficulty: 'medium' },
+            { size: 5, difficulty: 'medium' },
+            { size: 6, difficulty: 'hard' }
+        ];
         const sizeIndex = Math.abs(hashCode) % gridSizes.length;
-        const size = gridSizes[sizeIndex];
+        const { size, difficulty } = gridSizes[sizeIndex];
 
         const solution = generateSolution(size, hashCode);
         const cages = generateCages(solution, hashCode);
@@ -79,7 +85,8 @@ const KenKenGame = ({ onClose, pillarName }) => {
             size,
             solution,
             cages,
-            seed
+            seed,
+            difficulty
         };
     };
 
@@ -184,6 +191,7 @@ const KenKenGame = ({ onClose, pillarName }) => {
         const puzzle = generateKenKenPuzzle();
         setGameState(puzzle);
         setUserGrid(Array(puzzle.size).fill(null).map(() => Array(puzzle.size).fill(0)));
+        setDifficulty(puzzle.difficulty);
 
         // Load streak from localStorage
         const savedData = JSON.parse(localStorage.getItem(`kenken-${pillarName}`) || '{}');
@@ -431,6 +439,10 @@ const KenKenGame = ({ onClose, pillarName }) => {
                     <div className="kenken-title">
                         <Trophy size={24} />
                         <h2>KenKen Daily Challenge - {pillarName}</h2>
+                        <div className="kenken-difficulty-badge" data-difficulty={difficulty}>
+                            <Zap size={14} />
+                            {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
+                        </div>
                     </div>
                     <button className="kenken-close" onClick={onClose}>
                         <X size={24} />
